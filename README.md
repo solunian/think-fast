@@ -21,7 +21,8 @@ bun install
 bun run dev
 ```
 
-The production output is a client-rendered static application with a `200.html` fallback:
+The production output is a client-rendered, fully prerendered static application. On supported
+platforms such as Vercel, `adapter-static` uses its zero-config output automatically:
 
 ```sh
 bun run build
