@@ -1,13 +1,13 @@
 import { deleteDB, openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import { createDefaultMetadata, createDefaultSettings } from '$lib/domain/defaults';
-import { migrateStoredSnapshot, StoredDataError } from '$lib/domain/migrations';
+import { createDefaultMetadata, createDefaultSettings } from '#lib/domain/defaults.js';
+import { migrateStoredSnapshot, StoredDataError } from '#lib/domain/migrations.js';
 import type {
 	AppMetadata,
 	AppSnapshot,
 	AttemptRecord,
 	SessionRecord,
 	Settings
-} from '$lib/domain/types';
+} from '#lib/domain/types.js';
 
 const DATABASE_NAME = 'think-fast';
 const DATABASE_VERSION = 2;

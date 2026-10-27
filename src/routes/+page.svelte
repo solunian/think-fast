@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { useAppState } from '$lib/app-state.svelte';
+	import { useAppState } from '#lib/app-state.svelte.js';
 	import { resolve } from '$app/paths';
-	import BackupImporter from '$lib/components/BackupImporter.svelte';
-	import MiniTrend from '$lib/components/MiniTrend.svelte';
-	import { dashboardSummary, groupAttempts, trendPoints } from '$lib/domain/statistics';
-	import { formatDuration } from '$lib/domain/timer';
-	import { triggerRawRecoveryDownload } from '$lib/services/backup';
+	import BackupImporter from '#lib/components/BackupImporter.svelte';
+	import MiniTrend from '#lib/components/MiniTrend.svelte';
+	import { dashboardSummary, groupAttempts, trendPoints } from '#lib/domain/statistics.js';
+	import { formatDuration } from '#lib/domain/timer.js';
+	import { triggerRawRecoveryDownload } from '#lib/services/backup.js';
 
 	const app = useAppState();
 	let starting = $state(false);
@@ -83,6 +83,7 @@
 				>
 					Think clearly.<br />Respond quickly.
 				</h1>
+
 				<p class="mt-6 max-w-xl text-lg leading-8 text-[var(--muted)]">
 					Train rapid mental arithmetic and visual pattern recognition. There are no accounts and
 					nothing is sent anywhere.
@@ -161,7 +162,8 @@
 					All calculations and progress remain in this browser.
 				</p>
 			</div>
-			<a class="btn-secondary shrink-0" href={resolve('/history')}>Open history</a>
+
+			<a class="btn-secondary shrink-0" href={resolve('history')}>Open history</a>
 		</header>
 
 		<section
@@ -195,7 +197,7 @@
 			</div>
 			<div class="mt-5 grid gap-4 md:grid-cols-2">
 				<a
-					href={resolve('/practice/math')}
+					href={resolve('practice/math')}
 					class="surface group grid min-h-52 content-between rounded-md p-6 text-[var(--ink)] no-underline hover:border-[var(--accent)]"
 					><div>
 						<div class="mono text-sm font-bold text-[var(--accent)]">01 / ARITHMETIC</div>
@@ -207,7 +209,7 @@
 					<span class="mt-6 font-bold text-[var(--accent)]">Configure session →</span></a
 				>
 				<a
-					href={resolve('/practice/patterns')}
+					href={resolve('practice/patterns')}
 					class="surface group grid min-h-52 content-between rounded-md p-6 text-[var(--ink)] no-underline hover:border-[var(--accent)]"
 					><div>
 						<div class="mono text-sm font-bold text-[var(--accent)]">02 / PERCEPTION</div>
@@ -291,35 +293,47 @@
 					<p class="eyebrow">Local log</p>
 					<h2 id="recent-title" class="mt-1 text-xl font-bold">Recent sessions</h2>
 				</div>
-				<a class="text-sm font-bold text-[var(--accent)]" href={resolve('/history')}>View all</a>
+
+				<a class="text-sm font-bold text-[var(--accent)]" href={resolve('history')}>View all</a>
 			</div>
 			{#if recent.length}<div class="mt-4 overflow-x-auto">
 					<table class="w-full min-w-[640px] text-left text-sm">
 						<thead
 							class="border-b border-[var(--line)] text-xs uppercase tracking-wider text-[var(--muted)]"
-							><tr
-								><th class="py-3 pr-4">Session</th><th class="px-4 py-3">Date</th><th
-									class="px-4 py-3">Attempts</th
-								><th class="px-4 py-3">Accuracy</th><th class="py-3 pl-4">Status</th></tr
-							></thead
-						><tbody class="divide-y divide-[var(--line)]"
-							>{#each recent as session (session.id)}<tr
-									><td class="py-4 pr-4 font-semibold">{exerciseName(session.exerciseType)}</td><td
-										class="px-4 py-4 text-[var(--muted)]"
+						>
+							<tr>
+								<th class="py-3 pr-4">Session</th>
+								<th class="px-4 py-3">Date</th>
+								<th class="px-4 py-3">Attempts</th>
+								<th class="px-4 py-3">Accuracy</th>
+								<th class="py-3 pl-4">Status</th>
+							</tr>
+						</thead>
+
+						<tbody class="divide-y divide-[var(--line)]">
+							{#each recent as session (session.id)}
+								<tr>
+									<td class="py-4 pr-4 font-semibold">{exerciseName(session.exerciseType)}</td>
+									<td class="px-4 py-4 text-[var(--muted)]"
 										>{new Date(session.startedAt).toLocaleString([], {
 											dateStyle: 'medium',
 											timeStyle: 'short'
 										})}</td
-									><td class="mono px-4 py-4">{session.attemptedCount}</td><td
-										class="mono px-4 py-4"
-										>{session.attemptedCount
+									>
+									<td class="mono px-4 py-4">{session.attemptedCount}</td>
+
+									<td class="mono px-4 py-4">
+										{session.attemptedCount
 											? `${((session.correctCount / session.attemptedCount) * 100).toFixed(1)}%`
-											: '—'}</td
-									><td class="px-4 py-4 capitalize text-[var(--muted)]"
+											: '—'}
+									</td>
+
+									<td class="px-4 py-4 capitalize text-[var(--muted)]"
 										>{session.completionReason.replaceAll('-', ' ')}</td
-									></tr
-								>{/each}</tbody
-						>
+									>
+								</tr>
+							{/each}
+						</tbody>
 					</table>
 				</div>{:else}<p class="mt-4 text-[var(--muted)]">
 					Completed and interrupted sessions will appear here.

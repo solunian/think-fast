@@ -1,11 +1,11 @@
-import { backupSchema } from '$lib/domain/schemas';
+import { backupSchema } from '#lib/domain/schemas.js';
 import {
 	APP_VERSION,
 	CURRENT_SCHEMA_VERSION,
 	type AppSnapshot,
 	type BackupPreview,
 	type ThinkFastBackup
-} from '$lib/domain/types';
+} from '#lib/domain/types.js';
 
 export const MAX_BACKUP_BYTES = 10 * 1024 * 1024;
 

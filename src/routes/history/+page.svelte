@@ -1,15 +1,15 @@
 <script lang="ts">
-	import { useAppState } from '$lib/app-state.svelte';
+	import { useAppState } from '#lib/app-state.svelte.js';
 	import { resolve } from '$app/paths';
-	import MiniTrend from '$lib/components/MiniTrend.svelte';
-	import { summarizeAttempts } from '$lib/domain/scoring';
+	import MiniTrend from '#lib/components/MiniTrend.svelte';
+	import { summarizeAttempts } from '#lib/domain/scoring.js';
 	import {
 		filteredHistory,
 		groupAttempts,
 		trendPoints,
 		type HistoryFilters
-	} from '$lib/domain/statistics';
-	import { formatDuration } from '$lib/domain/timer';
+	} from '#lib/domain/statistics.js';
+	import { formatDuration } from '#lib/domain/timer.js';
 
 	const app = useAppState();
 	let exercise = $state<HistoryFilters['exercise']>('all');

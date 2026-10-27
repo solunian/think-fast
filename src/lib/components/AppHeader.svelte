@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import type { AppState } from '$lib/app-state.svelte';
+	import type { AppState } from '#lib/app-state.svelte.js';
 
 	let { app }: { app: AppState } = $props();
 	let exporting = $state(false);
@@ -37,13 +37,13 @@
 				>Dashboard</a
 			>
 			<a
-				href={resolve('/history')}
+				href={resolve('history')}
 				aria-current={page.url.pathname === '/history' ? 'page' : undefined}
 				class="hidden rounded-sm px-3 py-2 text-[var(--muted)] no-underline hover:bg-[var(--surface-muted)] aria-[current=page]:text-[var(--ink)] sm:block"
 				>History</a
 			>
 			<a
-				href={resolve('/settings')}
+				href={resolve('settings')}
 				aria-current={page.url.pathname === '/settings' ? 'page' : undefined}
 				class="rounded-sm px-3 py-2 text-[var(--muted)] no-underline hover:bg-[var(--surface-muted)] aria-[current=page]:text-[var(--ink)]"
 				>Settings</a

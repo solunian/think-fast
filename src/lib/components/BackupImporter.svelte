@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { useAppState } from '$lib/app-state.svelte';
-	import type { BackupPreview, ThinkFastBackup } from '$lib/domain/types';
+	import { useAppState } from '#lib/app-state.svelte.js';
+	import type { BackupPreview, ThinkFastBackup } from '#lib/domain/types.js';
 	import {
 		BackupError,
 		MAX_BACKUP_BYTES,
 		previewBackup,
 		validateBackupText
-	} from '$lib/services/backup';
+	} from '#lib/services/backup.js';
 
 	let { label = 'Import progress file', onimported }: { label?: string; onimported?: () => void } =
 		$props();

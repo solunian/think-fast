@@ -1,17 +1,17 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
-	import { useAppState } from '$lib/app-state.svelte';
+	import { useAppState } from '#lib/app-state.svelte.js';
 	import { resolve } from '$app/paths';
-	import ArrowGrid from '$lib/components/ArrowGrid.svelte';
+	import ArrowGrid from '#lib/components/ArrowGrid.svelte';
 	import {
 		compactPattern,
 		createBalancedPatternAnswers,
 		generatePatternTrial
-	} from '$lib/domain/pattern-generator';
-	import { accuracy, summarizeAttempts } from '$lib/domain/scoring';
-	import { groupAttempts, recentComparison } from '$lib/domain/statistics';
-	import { ActiveTimer, formatDuration } from '$lib/domain/timer';
-	import { playFeedbackTone } from '$lib/services/sound';
+	} from '#lib/domain/pattern-generator.js';
+	import { accuracy, summarizeAttempts } from '#lib/domain/scoring.js';
+	import { groupAttempts, recentComparison } from '#lib/domain/statistics.js';
+	import { ActiveTimer, formatDuration } from '#lib/domain/timer.js';
+	import { playFeedbackTone } from '#lib/services/sound.js';
 	import type {
 		ArrowDirection,
 		AttemptRecord,
@@ -19,7 +19,7 @@
 		Difficulty,
 		PatternTrial,
 		SessionRecord
-	} from '$lib/domain/types';
+	} from '#lib/domain/types.js';
 
 	type Phase = 'config' | 'countdown' | 'active' | 'results';
 	const app = useAppState();

@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { useAppState } from '$lib/app-state.svelte';
+	import { useAppState } from '#lib/app-state.svelte.js';
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
-	import BackupImporter from '$lib/components/BackupImporter.svelte';
-	import type { Difficulty, ExerciseType, Theme } from '$lib/domain/types';
-	import { triggerCsvDownload } from '$lib/services/backup';
+	import BackupImporter from '#lib/components/BackupImporter.svelte';
+	import type { Difficulty, ExerciseType, Theme } from '#lib/domain/types.js';
+	import { triggerCsvDownload } from '#lib/services/backup.js';
 
 	const app = useAppState();
 	let resetPanel = $state(false);

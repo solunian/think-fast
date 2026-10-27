@@ -9,20 +9,20 @@ import {
 	replaceAllData,
 	saveAttempt as persistAttempt,
 	saveSettings as persistSettings
-} from '$lib/data/repository';
+} from '#lib/data/repository.js';
 import type {
 	AppSnapshot,
 	AttemptRecord,
 	SessionRecord,
 	Settings,
 	ThinkFastBackup
-} from '$lib/domain/types';
+} from '#lib/domain/types.js';
 import {
 	backupToSnapshot,
 	mergeBackup,
 	serializeBackup,
 	triggerJsonDownload
-} from '$lib/services/backup';
+} from '#lib/services/backup.js';
 
 export type AppStatus = 'loading' | 'empty' | 'ready' | 'corrupt';
 

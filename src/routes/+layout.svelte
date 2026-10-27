@@ -2,8 +2,8 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import '../app.css';
-	import { AppState, provideAppState } from '$lib/app-state.svelte';
-	import AppHeader from '$lib/components/AppHeader.svelte';
+	import { AppState, provideAppState } from '#lib/app-state.svelte.js';
+	import AppHeader from '#lib/components/AppHeader.svelte';
 
 	let { children } = $props();
 	const app = provideAppState(new AppState());

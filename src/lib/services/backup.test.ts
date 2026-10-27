@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import { createDefaultMetadata, createDefaultSettings } from '$lib/domain/defaults';
-import type { AppSnapshot, AttemptRecord, SessionRecord } from '$lib/domain/types';
+import { createDefaultMetadata, createDefaultSettings } from '#lib/domain/defaults.js';
+import type { AppSnapshot, AttemptRecord, SessionRecord } from '#lib/domain/types.js';
 import {
 	BackupError,
 	createBackup,

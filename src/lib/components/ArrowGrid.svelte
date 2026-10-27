@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { ArrowDirection } from '$lib/domain/types';
+	import type { ArrowDirection } from '#lib/domain/types.js';
 
 	interface Props {
 		directions: ArrowDirection[];

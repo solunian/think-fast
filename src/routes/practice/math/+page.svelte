@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { onDestroy, onMount, tick } from 'svelte';
 	import { resolve } from '$app/paths';
-	import { useAppState } from '$lib/app-state.svelte';
-	import { generateMathQuestion } from '$lib/domain/math-generator';
-	import { groupAttempts, recentComparison } from '$lib/domain/statistics';
-	import { accuracy, summarizeAttempts } from '$lib/domain/scoring';
-	import { ActiveTimer, formatDuration } from '$lib/domain/timer';
-	import { playFeedbackTone } from '$lib/services/sound';
+	import { useAppState } from '#lib/app-state.svelte.js';
+	import { generateMathQuestion } from '#lib/domain/math-generator.js';
+	import { groupAttempts, recentComparison } from '#lib/domain/statistics.js';
+	import { accuracy, summarizeAttempts } from '#lib/domain/scoring.js';
+	import { ActiveTimer, formatDuration } from '#lib/domain/timer.js';
+	import { playFeedbackTone } from '#lib/services/sound.js';
 	import type {
 		AttemptRecord,
 		CompletionReason,
@@ -14,7 +14,7 @@
 		MathQuestion,
 		MentalMathCategory,
 		SessionRecord
-	} from '$lib/domain/types';
+	} from '#lib/domain/types.js';
 
 	type Phase = 'config' | 'countdown' | 'active' | 'results';
 	const app = useAppState();

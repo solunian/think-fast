@@ -105,6 +105,24 @@ test('start fresh reaches the dashboard', async ({ page }) => {
 	await expect(page.getByText('Fresh local workspace created.')).toBeVisible();
 });
 
+test('dashboard and header links navigate between application routes', async ({ page }) => {
+	await startFresh(page);
+	await page.getByRole('link', { name: 'Open history' }).click();
+	await expect(page).toHaveURL('/history');
+	const navigation = page.getByRole('navigation', { name: 'Primary' });
+	await expect(navigation.getByRole('link', { name: 'History' })).toHaveAttribute(
+		'aria-current',
+		'page'
+	);
+	await navigation.getByRole('link', { name: 'Settings' }).click();
+	await expect(page).toHaveURL('/settings');
+	await navigation.getByRole('link', { name: 'Dashboard' }).click();
+	await expect(page).toHaveURL('/');
+	await page.getByRole('link', { name: /Rapid Mental Math/ }).click();
+	await expect(page).toHaveURL('/practice/math');
+	await expect(page.getByTestId('start-math')).toBeVisible();
+});
+
 test('submitting a mental-math answer creates local progress', async ({ page }) => {
 	await startFresh(page);
 	await page.goto('/practice/math');
