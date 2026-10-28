@@ -229,7 +229,7 @@
 <svelte:head><title>Flashcards · Think Fast</title></svelte:head>
 <main class="mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
 	<p class="eyebrow">Local training · Default profile</p>
-	<h1 class="text-3xl font-bold">Flashcards</h1>
+	<h1 class="text-3xl font-medium">Flashcards</h1>
 	<p class="muted">
 		Create a deck, add questions, and practice at your own pace. Saved on this device.
 	</p>
@@ -255,7 +255,7 @@
 			}}>All decks</button
 		>
 		<section class="surface space-y-4 p-5">
-			<h2 class="text-2xl font-bold">{selected.name}</h2>
+			<h2 class="text-2xl font-medium">{selected.name}</h2>
 			<details>
 				<summary>Rename / description</summary>
 				<label class="field"><span>Name</span><input class="input" bind:value={name} /></label>
@@ -337,7 +337,7 @@
 							>{/if}
 					{:else}<button class="btn-primary" onclick={() => (revealed = true)}>Reveal answer</button
 						>{/if}
-				{:else}<h2 class="text-xl font-bold">Practice complete</h2>
+				{:else}<h2 class="text-xl font-medium">Practice complete</h2>
 					<button class="btn-secondary" onclick={() => run(start)}>Another pass</button>{/if}
 				{#if lastReview}<button
 						class="btn-secondary"
@@ -362,7 +362,7 @@
 					void run(save);
 				}}
 			>
-				<h2 class="text-xl font-bold">{editing ? 'Edit card' : 'Add card'}</h2>
+				<h2 class="text-xl font-medium">{editing ? 'Edit card' : 'Add card'}</h2>
 				{#if editing}<button
 						type="button"
 						class="btn-danger"
@@ -415,7 +415,7 @@
 				void run(create);
 			}}
 		>
-			<h2 class="text-xl font-bold">Create deck</h2>
+			<h2 class="text-xl font-medium">Create deck</h2>
 			<label class="field"
 				><span>Name</span><input class="input" bind:value={name} required /></label
 			>
@@ -425,7 +425,7 @@
 			<button class="btn-primary" disabled={busy}>Create deck</button>
 		</form>
 		<section class="surface space-y-3 p-5">
-			<h2 class="text-xl font-bold">Import CSV / Anki / deck JSON</h2>
+			<h2 class="text-xl font-medium">Import CSV / Anki / deck JSON</h2>
 			<p class="muted">
 				Anki: legacy packages only, plain text, fresh learning. Media and custom templates are not
 				supported. Maximum file size: 20 MB.
@@ -466,7 +466,7 @@
 			/>
 			{#each ankiWarnings as warning, i (i)}<p role="status">{warning}</p>{/each}
 			{#if preview || restore}
-				<h3 class="font-bold">Import preview</h3>
+				<h3 class="font-medium">Import preview</h3>
 				{#if restore}<label
 						><input type="checkbox" bind:checked={preserveIdentity} /> Restore original IDs and optional
 						progress (existing local progress wins)</label

@@ -65,14 +65,14 @@
 
 {#if app.status !== 'ready' || !app.snapshot || !app.settings}
 	<main class="mx-auto max-w-xl px-5 py-16 text-center">
-		<h1 class="text-2xl font-bold">Settings are available after initialization.</h1>
+		<h1 class="text-2xl font-medium">Settings are available after initialization.</h1>
 		<a href={resolve('/')} class="btn-primary mt-5">Return home</a>
 	</main>
 {:else}
 	<main class="mx-auto max-w-4xl px-5 py-10 sm:px-8 sm:py-14">
 		<header class="border-b border-[var(--line)] pb-7">
 			<p class="eyebrow">Local controls</p>
-			<h1 class="mt-2 text-4xl font-black tracking-tight">Settings</h1>
+			<h1 class="mt-2 text-4xl font-semibold tracking-tight">Settings</h1>
 			<p class="mt-3 max-w-2xl leading-7 text-[var(--muted)]">
 				Preferences save immediately to IndexedDB on this device.
 			</p>
@@ -84,7 +84,7 @@
 		>
 			<div>
 				<p class="eyebrow">Interface</p>
-				<h2 id="appearance-title" class="mt-1 text-xl font-bold">Appearance & feedback</h2>
+				<h2 id="appearance-title" class="mt-1 text-xl font-medium">Appearance & feedback</h2>
 			</div>
 			<div class="grid gap-5">
 				<label class="field"
@@ -131,7 +131,7 @@
 		>
 			<div>
 				<p class="eyebrow">Practice</p>
-				<h2 id="defaults-title" class="mt-1 text-xl font-bold">Session defaults</h2>
+				<h2 id="defaults-title" class="mt-1 text-xl font-medium">Session defaults</h2>
 			</div>
 			<div class="grid gap-5 sm:grid-cols-2">
 				<label class="field"
@@ -192,7 +192,7 @@
 		>
 			<div>
 				<p class="eyebrow">Portability</p>
-				<h2 id="backup-title" class="mt-1 text-xl font-bold">Backup & restore</h2>
+				<h2 id="backup-title" class="mt-1 text-xl font-medium">Backup & restore</h2>
 			</div>
 			<div class="grid gap-6">
 				<div class="rounded-sm bg-[var(--accent-soft)] p-4 text-sm leading-6">
@@ -228,7 +228,7 @@
 		<section class="grid gap-7 py-9 md:grid-cols-[0.7fr_1.3fr]" aria-labelledby="reset-title">
 			<div>
 				<p class="eyebrow text-[var(--danger)]">Danger zone</p>
-				<h2 id="reset-title" class="mt-1 text-xl font-bold">Delete all local data</h2>
+				<h2 id="reset-title" class="mt-1 text-xl font-medium">Delete all local data</h2>
 			</div>
 			<div>
 				<p class="leading-7 text-[var(--muted)]">
@@ -242,7 +242,7 @@
 					>{:else}<div
 						class="mt-5 grid gap-4 rounded-md border border-[var(--danger)] bg-[var(--danger-soft)] p-5"
 					>
-						<h3 class="font-bold text-[var(--danger)]">
+						<h3 class="font-medium text-[var(--danger)]">
 							Export first if you may want this data later.
 						</h3>
 						<button class="btn-secondary justify-self-start" onclick={exportBackup}

@@ -23,9 +23,9 @@
 			class="flex items-baseline gap-2 no-underline"
 			aria-label="Think Fast dashboard"
 		>
-			<span class="text-lg font-black tracking-[-0.04em] text-[var(--ink)]">THINK FAST</span>
-			<span class="hidden text-xs font-semibold tracking-wider text-[var(--muted)] sm:inline"
-				>LOCAL TRAINING</span
+			<span class="text-lg font-semibold tracking-[-0.04em] text-[var(--ink)]">Think Fast</span>
+			<span class="hidden text-xs font-medium tracking-normal text-[var(--muted)] sm:inline"
+				>Local training</span
 			>
 		</a>
 

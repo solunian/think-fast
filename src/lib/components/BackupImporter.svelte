@@ -93,7 +93,7 @@
 		>
 			<div>
 				<p class="eyebrow">Validated backup</p>
-				<h3 id="import-preview-title" class="mt-1 text-lg font-bold">Import preview</h3>
+				<h3 id="import-preview-title" class="mt-1 text-lg font-medium">Import preview</h3>
 			</div>
 			<dl class="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
 				<div>

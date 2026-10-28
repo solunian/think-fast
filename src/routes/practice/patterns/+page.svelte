@@ -284,7 +284,7 @@
 {#if app.status !== 'ready'}
 	<main class="mx-auto grid min-h-screen max-w-xl place-items-center px-5 text-center">
 		<div>
-			<h1 class="text-2xl font-bold">Local data is not ready.</h1>
+			<h1 class="text-2xl font-medium">Local data is not ready.</h1>
 			<a class="btn-primary mt-5" href={resolve('/')}>Return to initialization</a>
 		</div>
 	</main>
@@ -292,13 +292,13 @@
 	<main class="mx-auto max-w-4xl px-5 py-10 sm:px-8 sm:py-16">
 		<a
 			href={resolve('/')}
-			class="text-sm font-bold text-[var(--muted)] no-underline hover:text-[var(--ink)]"
+			class="text-sm font-medium text-[var(--muted)] no-underline hover:text-[var(--ink)]"
 			>← Dashboard</a
 		>
 		<div class="mt-10 grid gap-10 md:grid-cols-[1.15fr_0.85fr]">
 			<section>
 				<p class="eyebrow">Arrow patterns</p>
-				<h1 class="mt-3 text-5xl font-black tracking-[-0.05em]">Detect the mismatch.</h1>
+				<h1 class="mt-3 text-5xl font-semibold tracking-[-0.025em]">Detect the mismatch.</h1>
 				<p class="mt-5 max-w-xl text-lg leading-8 text-[var(--muted)]">
 					Compare every position in two arrow grids. Respond immediately when all directions
 					match—or when any one differs.
@@ -353,12 +353,12 @@
 		<div>
 			<p class="eyebrow">Get ready</p>
 			<p
-				class="mono mt-5 text-[clamp(7rem,28vw,16rem)] font-black leading-none text-[var(--accent)]"
+				class="mono mt-5 text-[clamp(7rem,28vw,16rem)] font-semibold leading-none text-[var(--accent)]"
 			>
 				{Math.max(1, Math.ceil(countdownRemaining / 1000))}
 			</p>
 			<p class="mt-6 text-[var(--muted)]">Different: ← / D · Same: → / S</p>
-			{#if paused}<p class="mt-3 font-bold text-[var(--warning)]" role="status">
+			{#if paused}<p class="mt-3 font-medium text-[var(--warning)]" role="status">
 					Paused — return to this tab to continue
 				</p>{/if}
 		</div>
@@ -368,17 +368,17 @@
 		<header class="grid grid-cols-3 items-center border-b border-[var(--line)] pb-4 text-sm">
 			<div>
 				<span class="eyebrow">Trials</span>
-				<p class="mono mt-1 font-bold">{summary.attempted}</p>
+				<p class="mono mt-1 font-medium">{summary.attempted}</p>
 			</div>
 			<div class="text-center">
 				<span class="eyebrow">Remaining</span>
-				<p class="mono mt-1 text-2xl font-black" data-testid="pattern-timer">
+				<p class="mono mt-1 text-2xl font-semibold" data-testid="pattern-timer">
 					{formatDuration(remainingMs)}
 				</p>
 			</div>
 			<div class="text-right">
 				<span class="eyebrow">Accuracy</span>
-				<p class="mono mt-1 font-bold">
+				<p class="mono mt-1 font-medium">
 					{summary.attempted ? `${currentAccuracy.toFixed(0)}%` : '—'}
 				</p>
 			</div>
@@ -391,7 +391,7 @@
 		</div>
 		<section class="grid flex-1 content-center py-7 text-center" aria-labelledby="pattern-question">
 			<p class="eyebrow">Compare every position</p>
-			<h1 id="pattern-question" class="mt-2 text-2xl font-black">Same or different?</h1>
+			<h1 id="pattern-question" class="mt-2 text-2xl font-semibold">Same or different?</h1>
 			<div class="mx-auto mt-7 grid w-full max-w-4xl grid-cols-2 gap-3 sm:gap-8">
 				<ArrowGrid directions={trial.left} size={trial.size} label="Left arrow grid" /><ArrowGrid
 					directions={trial.right}
@@ -401,7 +401,7 @@
 			</div>
 			<p
 				class={[
-					'mt-4 min-h-6 text-sm font-bold',
+					'mt-4 min-h-6 text-sm font-medium',
 					feedback === 'correct'
 						? 'text-[var(--success)]'
 						: feedback === 'incorrect'
@@ -440,7 +440,7 @@
 			>
 				<div>
 					<p class="eyebrow">Session paused</p>
-					<h2 class="mt-2 text-3xl font-black">Return focus to continue</h2>
+					<h2 class="mt-2 text-3xl font-semibold">Return focus to continue</h2>
 					<p class="mt-3 text-[var(--muted)]">
 						Hidden time is excluded from your practice and reaction time.
 					</p>
@@ -454,7 +454,7 @@
 		>
 			<div>
 				<p class="eyebrow">Session results</p>
-				<h1 class="mt-2 text-4xl font-black tracking-tight">
+				<h1 class="mt-2 text-4xl font-semibold tracking-tight">
 					{summary.accuracy.toFixed(1)}% accurate
 				</h1>
 				<p class="mt-2 text-[var(--muted)]">
@@ -477,7 +477,7 @@
 			</div>
 			<div class="py-6">
 				<p class="eyebrow">Avg / median reaction</p>
-				<p class="mono mt-2 text-xl font-bold">
+				<p class="mono mt-2 text-xl font-medium">
 					{(summary.averageResponseMs / 1000).toFixed(2)}s / {(
 						summary.medianResponseMs / 1000
 					).toFixed(2)}s
@@ -485,7 +485,9 @@
 			</div>
 			<div class="py-6">
 				<p class="eyebrow">Active time</p>
-				<p class="mono mt-2 text-xl font-bold">{formatDuration(resultSession.activeDurationMs)}</p>
+				<p class="mono mt-2 text-xl font-medium">
+					{formatDuration(resultSession.activeDurationMs)}
+				</p>
 			</div>
 		</section>
 		{#if comparison}<section class="mt-8 border-l-4 border-[var(--accent)] pl-4">
@@ -499,7 +501,7 @@
 		<section class="mt-10 grid gap-10 lg:grid-cols-2">
 			<div>
 				<p class="eyebrow">Breakdown</p>
-				<h2 class="mt-1 text-xl font-bold">Same versus different</h2>
+				<h2 class="mt-1 text-xl font-medium">Same versus different</h2>
 				<div class="mt-4 divide-y divide-[var(--line)] border-y border-[var(--line)]">
 					{#each breakdown as item (item.key)}<div
 							class="grid grid-cols-[1fr_auto_auto] gap-5 py-3"
@@ -512,7 +514,7 @@
 			</div>
 			<div>
 				<p class="eyebrow">Review</p>
-				<h2 class="mt-1 text-xl font-bold">Missed patterns</h2>
+				<h2 class="mt-1 text-xl font-medium">Missed patterns</h2>
 				{#if missedReviews.length}<div class="mt-4 grid gap-4">
 						{#each missedReviews as review (review.attempt.id)}<article
 								class="surface rounded-md p-3"

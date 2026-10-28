@@ -68,7 +68,7 @@
 	<main class="mx-auto grid min-h-[75vh] max-w-xl place-items-center px-6 text-center">
 		<div>
 			<p class="eyebrow">Local initialization</p>
-			<h1 class="mt-3 text-3xl font-black tracking-tight">Opening your training data</h1>
+			<h1 class="mt-3 text-3xl font-semibold tracking-tight">Opening your training data</h1>
 			<p class="mt-3 text-[var(--muted)]" role="status">Checking this browser’s IndexedDB…</p>
 		</div>
 	</main>
@@ -79,7 +79,7 @@
 				<p class="eyebrow">Private speed training</p>
 				<h1
 					id="welcome-title"
-					class="mt-4 max-w-xl text-5xl font-black tracking-[-0.055em] sm:text-6xl"
+					class="mt-4 max-w-xl text-5xl font-semibold tracking-[-0.025em] sm:text-6xl"
 				>
 					Think clearly.<br />Respond quickly.
 				</h1>
@@ -99,11 +99,11 @@
 			<section class="surface grid gap-5 rounded-lg p-6 sm:p-8" aria-labelledby="begin-title">
 				<div>
 					<p class="eyebrow">Initialize</p>
-					<h2 id="begin-title" class="mt-2 text-2xl font-bold">Choose where to begin</h2>
+					<h2 id="begin-title" class="mt-2 text-2xl font-medium">Choose where to begin</h2>
 				</div>
 				<BackupImporter />
 				<div class="flex items-center gap-3 text-xs text-[var(--muted)]" aria-hidden="true">
-					<span class="h-px flex-1 bg-[var(--line)]"></span><span>OR</span><span
+					<span class="h-px flex-1 bg-[var(--line)]"></span><span>or</span><span
 						class="h-px flex-1 bg-[var(--line)]"
 					></span>
 				</div>
@@ -121,7 +121,7 @@
 		<section class="surface grid gap-6 rounded-lg border-t-4 border-t-[var(--danger)] p-6 sm:p-8">
 			<div>
 				<p class="eyebrow text-[var(--danger)]">Recovery required</p>
-				<h1 class="mt-2 text-3xl font-black tracking-tight">Your local data needs attention</h1>
+				<h1 class="mt-2 text-3xl font-semibold tracking-tight">Your local data needs attention</h1>
 				<p class="mt-3 leading-7 text-[var(--muted)]">
 					Think Fast found local data but could not validate it. Nothing has been deleted.
 				</p>
@@ -155,7 +155,7 @@
 		>
 			<div>
 				<p class="eyebrow">Practice console</p>
-				<h1 class="mt-2 text-4xl font-black tracking-[-0.045em]">
+				<h1 class="mt-2 text-4xl font-semibold tracking-[-0.025em]">
 					Build speed without losing precision.
 				</h1>
 				<p class="mt-3 max-w-2xl text-[var(--muted)]">
@@ -193,32 +193,32 @@
 		<section class="py-9" aria-labelledby="start-title">
 			<div>
 				<p class="eyebrow">Choose a drill</p>
-				<h2 id="start-title" class="mt-1 text-2xl font-bold">Start practice</h2>
+				<h2 id="start-title" class="mt-1 text-2xl font-medium">Start practice</h2>
 			</div>
 			<div class="mt-5 grid gap-4 md:grid-cols-2">
 				<a
 					href={resolve('practice/math')}
 					class="surface group grid min-h-52 content-between rounded-md p-6 text-[var(--ink)] no-underline hover:border-[var(--accent)]"
 					><div>
-						<div class="mono text-sm font-bold text-[var(--accent)]">01 / ARITHMETIC</div>
-						<h3 class="mt-5 text-3xl font-black tracking-tight">Rapid Mental Math</h3>
+						<div class="mono text-sm font-medium text-[var(--accent)]">01 / Arithmetic</div>
+						<h3 class="mt-5 text-3xl font-semibold tracking-tight">Rapid Mental Math</h3>
 						<p class="mt-3 max-w-md leading-6 text-[var(--muted)]">
 							Exact arithmetic under an 8-minute clock. Reach 80 questions or use the full time.
 						</p>
 					</div>
-					<span class="mt-6 font-bold text-[var(--accent)]">Configure session →</span></a
+					<span class="mt-6 font-medium text-[var(--accent)]">Configure session →</span></a
 				>
 				<a
 					href={resolve('practice/patterns')}
 					class="surface group grid min-h-52 content-between rounded-md p-6 text-[var(--ink)] no-underline hover:border-[var(--accent)]"
 					><div>
-						<div class="mono text-sm font-bold text-[var(--accent)]">02 / PERCEPTION</div>
-						<h3 class="mt-5 text-3xl font-black tracking-tight">Arrow Patterns</h3>
+						<div class="mono text-sm font-medium text-[var(--accent)]">02 / Perception</div>
+						<h3 class="mt-5 text-3xl font-semibold tracking-tight">Arrow Patterns</h3>
 						<p class="mt-3 max-w-md leading-6 text-[var(--muted)]">
 							Decide whether directional grids match. Two minutes, keyboard-first.
 						</p>
 					</div>
-					<span class="mt-6 font-bold text-[var(--accent)]">Configure session →</span></a
+					<span class="mt-6 font-medium text-[var(--accent)]">Configure session →</span></a
 				>
 			</div>
 		</section>
@@ -229,7 +229,7 @@
 				aria-labelledby="empty-stats"
 			>
 				<p class="eyebrow">No performance data yet</p>
-				<h2 id="empty-stats" class="mt-2 text-xl font-bold">
+				<h2 id="empty-stats" class="mt-2 text-xl font-medium">
 					Your measurements begin with the first answer.
 				</h2>
 				<p class="mx-auto mt-2 max-w-xl text-[var(--muted)]">
@@ -244,32 +244,32 @@
 			>
 				<div>
 					<p class="eyebrow">Recent sessions</p>
-					<h2 id="trends-title" class="mt-1 text-xl font-bold">Accuracy trend</h2>
+					<h2 id="trends-title" class="mt-1 text-xl font-medium">Accuracy trend</h2>
 					<div class="mt-4"><MiniTrend points={accuracyTrend} suffix="%" /></div>
 				</div>
 				<div>
 					<p class="eyebrow">Recent sessions</p>
-					<h2 class="mt-1 text-xl font-bold">Average response time</h2>
+					<h2 class="mt-1 text-xl font-medium">Average response time</h2>
 					<div class="mt-4"><MiniTrend points={responseTrend} suffix="s" /></div>
 				</div>
 			</section>
 			<section class="grid gap-8 border-t border-[var(--line)] py-9 lg:grid-cols-2">
 				<div>
 					<p class="eyebrow">Performance</p>
-					<h2 class="mt-1 text-xl font-bold">By exercise</h2>
+					<h2 class="mt-1 text-xl font-medium">By exercise</h2>
 					<div class="mt-4 divide-y divide-[var(--line)] border-y border-[var(--line)]">
 						{#each exercisePerformance as item (item.key)}<div
 								class="grid grid-cols-[1fr_auto_auto] items-center gap-5 py-3"
 							>
 								<span class="font-semibold">{exerciseName(item.key)}</span><span
 									class="mono text-sm text-[var(--muted)]">{item.attempted} attempts</span
-								><span class="mono font-bold">{item.accuracy.toFixed(1)}%</span>
+								><span class="mono font-medium">{item.accuracy.toFixed(1)}%</span>
 							</div>{/each}
 					</div>
 				</div>
 				<div>
 					<p class="eyebrow">Arithmetic</p>
-					<h2 class="mt-1 text-xl font-bold">By category</h2>
+					<h2 class="mt-1 text-xl font-medium">By category</h2>
 					{#if mathCategories.length}<div
 							class="mt-4 divide-y divide-[var(--line)] border-y border-[var(--line)]"
 						>
@@ -277,7 +277,7 @@
 									class="grid grid-cols-[1fr_auto] items-center gap-5 py-3"
 								>
 									<span class="font-semibold capitalize">{item.key}</span><span
-										class="mono font-bold">{item.accuracy.toFixed(1)}%</span
+										class="mono font-medium">{item.accuracy.toFixed(1)}%</span
 									>
 								</div>{/each}
 						</div>{:else}<p class="mt-4 text-sm text-[var(--muted)]">
@@ -291,15 +291,15 @@
 			<div class="flex items-end justify-between">
 				<div>
 					<p class="eyebrow">Local log</p>
-					<h2 id="recent-title" class="mt-1 text-xl font-bold">Recent sessions</h2>
+					<h2 id="recent-title" class="mt-1 text-xl font-medium">Recent sessions</h2>
 				</div>
 
-				<a class="text-sm font-bold text-[var(--accent)]" href={resolve('history')}>View all</a>
+				<a class="text-sm font-medium text-[var(--accent)]" href={resolve('history')}>View all</a>
 			</div>
 			{#if recent.length}<div class="mt-4 overflow-x-auto">
 					<table class="w-full min-w-[640px] text-left text-sm">
 						<thead
-							class="border-b border-[var(--line)] text-xs uppercase tracking-wider text-[var(--muted)]"
+							class="border-b border-[var(--line)] text-xs font-medium tracking-normal text-[var(--muted)]"
 						>
 							<tr>
 								<th class="py-3 pr-4">Session</th>

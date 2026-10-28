@@ -1,46 +1,45 @@
 @import 'tailwindcss';
 
 @theme {
-	--font-sans:
-		Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+	--font-sans: 'Avenir Next', Avenir, 'Trebuchet MS', ui-sans-serif, system-ui, sans-serif;
 	--font-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
 }
 
 :root {
 	font-family: var(--font-sans);
 	color-scheme: light;
-	--bg: #f4f3ef;
+	--bg: #f4f6fc;
 	--surface: #ffffff;
-	--surface-muted: #e9e8e2;
-	--ink: #161b1d;
-	--muted: #5c6669;
-	--line: #c9cecc;
-	--accent: #0a665d;
-	--accent-strong: #064b45;
-	--accent-soft: #d9efeb;
-	--danger: #a33131;
-	--danger-soft: #f8e3e0;
-	--warning: #805c00;
-	--warning-soft: #f5e8bd;
-	--success: #146448;
+	--surface-muted: #edf0f8;
+	--ink: #29334d;
+	--muted: #626e88;
+	--line: #d9dfed;
+	--accent: #5265b5;
+	--accent-strong: #405298;
+	--accent-soft: #e7ebfc;
+	--danger: #a54368;
+	--danger-soft: #f8e7ee;
+	--warning: #685398;
+	--warning-soft: #eee8fa;
+	--success: #4d62a8;
 }
 
 :root.dark {
 	color-scheme: dark;
-	--bg: #101415;
-	--surface: #171c1e;
-	--surface-muted: #22292b;
-	--ink: #f0f2ee;
-	--muted: #a9b2b1;
-	--line: #3d4849;
-	--accent: #65d3c4;
-	--accent-strong: #9ce6dc;
-	--accent-soft: #193e3a;
-	--danger: #ff9c96;
-	--danger-soft: #492522;
-	--warning: #f3c760;
-	--warning-soft: #443816;
-	--success: #78d7ae;
+	--bg: #141925;
+	--surface: #1c2333;
+	--surface-muted: #272f43;
+	--ink: #edf0fa;
+	--muted: #b0bbd3;
+	--line: #3a4560;
+	--accent: #a7b7ff;
+	--accent-strong: #c5ceff;
+	--accent-soft: #2b365a;
+	--danger: #f0a9c2;
+	--danger-soft: #432b3d;
+	--warning: #c4b4ef;
+	--warning-soft: #342d4a;
+	--success: #b3c2ff;
 }
 
 html {
@@ -55,11 +54,13 @@ body {
 	background: var(--bg);
 	color: var(--ink);
 	font-variant-numeric: tabular-nums;
+	line-height: 1.6;
 }
 
 button,
 input,
-select {
+select,
+textarea {
 	font: inherit;
 }
 
@@ -101,15 +102,16 @@ button:disabled {
 }
 
 .surface {
+	border-radius: 1rem;
 	border: 1px solid var(--line);
 	background: var(--surface);
 }
 
 .eyebrow {
-	font-size: 0.72rem;
-	font-weight: 750;
-	letter-spacing: 0.14em;
-	text-transform: uppercase;
+	font-size: 0.8rem;
+	font-weight: 500;
+	letter-spacing: 0.01em;
+	text-transform: none;
 	color: var(--muted);
 }
 
@@ -122,9 +124,9 @@ button:disabled {
 	align-items: center;
 	justify-content: center;
 	gap: 0.5rem;
-	border-radius: 0.35rem;
+	border-radius: 0.75rem;
 	padding: 0.65rem 1rem;
-	font-weight: 720;
+	font-weight: 600;
 	line-height: 1.1;
 	text-decoration: none;
 }
@@ -136,7 +138,7 @@ button:disabled {
 }
 
 .dark .btn-primary {
-	color: #0e1818;
+	color: #19213b;
 }
 
 .btn-primary:hover {
@@ -173,7 +175,7 @@ button:disabled {
 
 .field > span:first-child {
 	font-size: 0.82rem;
-	font-weight: 700;
+	font-weight: 500;
 	color: var(--muted);
 }
 
@@ -181,7 +183,7 @@ button:disabled {
 	min-height: 2.75rem;
 	width: 100%;
 	border: 1px solid var(--line);
-	border-radius: 0.35rem;
+	border-radius: 0.75rem;
 	background: var(--surface);
 	padding: 0.65rem 0.75rem;
 	color: var(--ink);
@@ -197,9 +199,9 @@ button:disabled {
 }
 
 .metric {
-	font-family: var(--font-mono);
+	font-family: var(--font-sans);
 	font-size: clamp(1.65rem, 3vw, 2.35rem);
-	font-weight: 700;
+	font-weight: 500;
 	letter-spacing: -0.04em;
 }
 

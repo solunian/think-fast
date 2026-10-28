@@ -67,7 +67,7 @@
 		>
 			<span class="font-semibold text-[var(--warning)]">Backup recommended</span>
 			<button
-				class="font-bold text-[var(--accent)] underline underline-offset-4"
+				class="font-medium text-[var(--accent)] underline underline-offset-4"
 				onclick={() => void app.exportBackup()}>Export</button
 			>
 		</div>

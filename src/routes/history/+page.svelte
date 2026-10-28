@@ -55,14 +55,14 @@
 
 {#if app.status !== 'ready' || !snapshot}
 	<main class="mx-auto max-w-xl px-5 py-16 text-center">
-		<h1 class="text-2xl font-bold">History is available after initialization.</h1>
+		<h1 class="text-2xl font-medium">History is available after initialization.</h1>
 		<a href={resolve('/')} class="btn-primary mt-5">Return home</a>
 	</main>
 {:else}
 	<main class="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
 		<header class="border-b border-[var(--line)] pb-7">
 			<p class="eyebrow">Local analysis</p>
-			<h1 class="mt-2 text-4xl font-black tracking-tight">History & statistics</h1>
+			<h1 class="mt-2 text-4xl font-semibold tracking-tight">History & statistics</h1>
 			<p class="mt-3 max-w-2xl text-[var(--muted)]">
 				Every filter and calculation runs locally. Interrupted sessions remain visible and are
 				labeled.
@@ -126,7 +126,7 @@
 		{#if filtered.sessions.length === 0 && filtered.attempts.length === 0}
 			<section class="surface my-10 rounded-md border-dashed p-8 text-center">
 				<p class="eyebrow">No matching data</p>
-				<h2 class="mt-2 text-xl font-bold">
+				<h2 class="mt-2 text-xl font-medium">
 					Practice sessions matching these filters will appear here.
 				</h2>
 				<p class="mt-2 text-[var(--muted)]">Try a broader filter or start a new drill.</p>
@@ -135,22 +135,22 @@
 			<section class="grid gap-8 border-b border-[var(--line)] py-9 lg:grid-cols-2">
 				<div>
 					<p class="eyebrow">Sequence</p>
-					<h2 class="mt-1 text-xl font-bold">Accuracy trend</h2>
+					<h2 class="mt-1 text-xl font-medium">Accuracy trend</h2>
 					<div class="mt-4"><MiniTrend points={accuracyTrend} suffix="%" /></div>
 				</div>
 				<div>
 					<p class="eyebrow">Sequence</p>
-					<h2 class="mt-1 text-xl font-bold">Response-time trend</h2>
+					<h2 class="mt-1 text-xl font-medium">Response-time trend</h2>
 					<div class="mt-4"><MiniTrend points={responseTrend} suffix="s" /></div>
 				</div>
 			</section>
 			<section class="grid gap-8 border-b border-[var(--line)] py-9 lg:grid-cols-[0.65fr_1.35fr]">
 				<div>
 					<p class="eyebrow">Filtered attempts</p>
-					<h2 class="mt-1 text-xl font-bold">Category performance</h2>
+					<h2 class="mt-1 text-xl font-medium">Category performance</h2>
 					<div class="mt-4 divide-y divide-[var(--line)] border-y border-[var(--line)]">
 						{#each byCategory as item (item.key)}<div class="grid grid-cols-[1fr_auto] gap-4 py-3">
-								<span class="capitalize">{item.key}</span><span class="mono font-bold"
+								<span class="capitalize">{item.key}</span><span class="mono font-medium"
 									>{item.accuracy.toFixed(1)}%</span
 								>
 							</div>{/each}
@@ -163,11 +163,11 @@
 				</div>
 				<div>
 					<p class="eyebrow">Local log</p>
-					<h2 class="mt-1 text-xl font-bold">Sessions</h2>
+					<h2 class="mt-1 text-xl font-medium">Sessions</h2>
 					<div class="mt-4 overflow-x-auto">
 						<table class="w-full min-w-[640px] text-left text-sm">
 							<thead
-								class="border-b border-[var(--line)] text-xs uppercase tracking-wider text-[var(--muted)]"
+								class="border-b border-[var(--line)] text-xs font-medium tracking-normal text-[var(--muted)]"
 								><tr
 									><th class="py-3 pr-3">Exercise</th><th class="px-3 py-3">Date</th><th
 										class="px-3 py-3">Difficulty</th

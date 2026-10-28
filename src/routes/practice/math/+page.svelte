@@ -248,7 +248,7 @@
 {#if app.status !== 'ready'}
 	<main class="mx-auto grid min-h-screen max-w-xl place-items-center px-5 text-center">
 		<div>
-			<h1 class="text-2xl font-bold">Local data is not ready.</h1>
+			<h1 class="text-2xl font-medium">Local data is not ready.</h1>
 			<a class="btn-primary mt-5" href={resolve('/')}>Return to initialization</a>
 		</div>
 	</main>
@@ -256,13 +256,13 @@
 	<main class="mx-auto max-w-4xl px-5 py-10 sm:px-8 sm:py-16">
 		<a
 			href={resolve('/')}
-			class="text-sm font-bold text-[var(--muted)] no-underline hover:text-[var(--ink)]"
+			class="text-sm font-medium text-[var(--muted)] no-underline hover:text-[var(--ink)]"
 			>← Dashboard</a
 		>
 		<div class="mt-10 grid gap-10 md:grid-cols-[1.15fr_0.85fr]">
 			<section>
 				<p class="eyebrow">Rapid mental math</p>
-				<h1 class="mt-3 text-5xl font-black tracking-[-0.05em]">Arithmetic under pressure.</h1>
+				<h1 class="mt-3 text-5xl font-semibold tracking-[-0.025em]">Arithmetic under pressure.</h1>
 				<p class="mt-5 max-w-xl text-lg leading-8 text-[var(--muted)]">
 					Answer exact whole-number problems with the keyboard. The session stops at 80 submissions
 					or when time expires.
@@ -270,15 +270,15 @@
 				<dl class="mt-8 grid grid-cols-3 gap-4 border-y border-[var(--line)] py-5 text-sm">
 					<div>
 						<dt class="text-[var(--muted)]">Countdown</dt>
-						<dd class="mono mt-1 font-bold">3 sec</dd>
+						<dd class="mono mt-1 font-medium">3 sec</dd>
 					</div>
 					<div>
 						<dt class="text-[var(--muted)]">Target</dt>
-						<dd class="mono mt-1 font-bold">80</dd>
+						<dd class="mono mt-1 font-medium">80</dd>
 					</div>
 					<div>
 						<dt class="text-[var(--muted)]">Hidden tab</dt>
-						<dd class="mt-1 font-bold">Pauses</dd>
+						<dd class="mt-1 font-medium">Pauses</dd>
 					</div>
 				</dl>
 			</section>
@@ -325,12 +325,12 @@
 		<div>
 			<p class="eyebrow">Get ready</p>
 			<p
-				class="mono mt-5 text-[clamp(7rem,28vw,16rem)] font-black leading-none text-[var(--accent)]"
+				class="mono mt-5 text-[clamp(7rem,28vw,16rem)] font-semibold leading-none text-[var(--accent)]"
 			>
 				{Math.max(1, Math.ceil(countdownRemaining / 1000))}
 			</p>
 			<p class="mt-6 text-[var(--muted)]">The clock pauses whenever this tab is hidden.</p>
-			{#if paused}<p class="mt-3 font-bold text-[var(--warning)]" role="status">
+			{#if paused}<p class="mt-3 font-medium text-[var(--warning)]" role="status">
 					Paused — return to this tab to continue
 				</p>{/if}
 		</div>
@@ -340,17 +340,17 @@
 		<header class="grid grid-cols-3 items-center border-b border-[var(--line)] pb-4 text-sm">
 			<div>
 				<span class="eyebrow">Question</span>
-				<p class="mono mt-1 font-bold">{summary.attempted + 1} / 80</p>
+				<p class="mono mt-1 font-medium">{summary.attempted + 1} / 80</p>
 			</div>
 			<div class="text-center">
 				<span class="eyebrow">Remaining</span>
-				<p class="mono mt-1 text-2xl font-black" data-testid="math-timer">
+				<p class="mono mt-1 text-2xl font-semibold" data-testid="math-timer">
 					{formatDuration(remainingMs)}
 				</p>
 			</div>
 			<div class="text-right">
 				<span class="eyebrow">Accuracy</span>
-				<p class="mono mt-1 font-bold">
+				<p class="mono mt-1 font-medium">
 					{summary.attempted ? `${currentAccuracy.toFixed(0)}%` : '—'}
 				</p>
 			</div>
@@ -366,7 +366,7 @@
 				<p class="eyebrow">Solve exactly</p>
 				<h1
 					id="math-prompt"
-					class="mono my-10 text-[clamp(3rem,12vw,7.5rem)] font-black tracking-[-0.07em]"
+					class="mono my-10 text-[clamp(3rem,12vw,7.5rem)] font-semibold tracking-[-0.07em]"
 				>
 					{currentQuestion.prompt}
 				</h1>
@@ -375,7 +375,7 @@
 						bind:this={answerInput}
 						id="math-answer"
 						data-testid="math-answer"
-						class="input mono h-20 text-center text-4xl font-bold"
+						class="input mono h-20 text-center text-4xl font-medium"
 						inputmode="numeric"
 						autocomplete="off"
 						bind:value={answer}
@@ -392,7 +392,7 @@
 					<p
 						id="feedback"
 						class={[
-							'mt-1 min-h-6 text-sm font-bold',
+							'mt-1 min-h-6 text-sm font-medium',
 							feedback === 'correct'
 								? 'text-[var(--success)]'
 								: feedback === 'incorrect'
@@ -423,7 +423,7 @@
 			>
 				<div>
 					<p class="eyebrow">Session paused</p>
-					<h2 class="mt-2 text-3xl font-black">Return focus to continue</h2>
+					<h2 class="mt-2 text-3xl font-semibold">Return focus to continue</h2>
 					<p class="mt-3 text-[var(--muted)]">
 						Hidden time is excluded from your practice time and response time.
 					</p>
@@ -437,7 +437,7 @@
 		>
 			<div>
 				<p class="eyebrow">Session results</p>
-				<h1 class="mt-2 text-4xl font-black tracking-tight">{summary.correct} correct</h1>
+				<h1 class="mt-2 text-4xl font-semibold tracking-tight">{summary.correct} correct</h1>
 				<p class="mt-2 text-[var(--muted)]">
 					{resultSession.completionReason.replaceAll('-', ' ')} · saved locally
 				</p>
@@ -462,7 +462,7 @@
 			</div>
 			<div class="py-6">
 				<p class="eyebrow">Avg / median</p>
-				<p class="mono mt-2 text-xl font-bold">
+				<p class="mono mt-2 text-xl font-medium">
 					{(summary.averageResponseMs / 1000).toFixed(2)}s / {(
 						summary.medianResponseMs / 1000
 					).toFixed(2)}s
@@ -470,7 +470,9 @@
 			</div>
 			<div class="py-6">
 				<p class="eyebrow">Active time</p>
-				<p class="mono mt-2 text-xl font-bold">{formatDuration(resultSession.activeDurationMs)}</p>
+				<p class="mono mt-2 text-xl font-medium">
+					{formatDuration(resultSession.activeDurationMs)}
+				</p>
 			</div>
 		</section>
 		{#if Number.isFinite(summary.fastestCorrectMs)}<p class="mt-5 text-sm text-[var(--muted)]">
@@ -491,7 +493,7 @@
 		<section class="mt-10 grid gap-10 lg:grid-cols-2">
 			<div>
 				<p class="eyebrow">Breakdown</p>
-				<h2 class="mt-1 text-xl font-bold">By category</h2>
+				<h2 class="mt-1 text-xl font-medium">By category</h2>
 				{#if breakdown.length}<div
 						class="mt-4 divide-y divide-[var(--line)] border-y border-[var(--line)]"
 					>
@@ -506,14 +508,15 @@
 			</div>
 			<div>
 				<p class="eyebrow">Review</p>
-				<h2 class="mt-1 text-xl font-bold">Incorrect answers</h2>
+				<h2 class="mt-1 text-xl font-medium">Incorrect answers</h2>
 				{#if incorrectAttempts.length}<ol
 						class="mt-4 divide-y divide-[var(--line)] border-y border-[var(--line)]"
 					>
 						{#each incorrectAttempts as attempt (attempt.id)}<li
 								class="grid grid-cols-[1fr_auto] gap-4 py-3"
 							>
-								<span class="mono font-bold">{attempt.prompt}</span><span class="text-right text-sm"
+								<span class="mono font-medium">{attempt.prompt}</span><span
+									class="text-right text-sm"
 									><span class="text-[var(--danger)]">{attempt.submittedAnswer}</span><span
 										class="mx-2 text-[var(--muted)]">→</span
 									><strong>{attempt.expectedAnswer}</strong></span
