@@ -1,3 +1,4 @@
+import { flashBackupSchema } from '../flashcards/backup';
 import z from 'zod';
 import { CURRENT_SCHEMA_VERSION } from './types';
 
@@ -72,6 +73,7 @@ export const metadataSchema = z.object({
 
 export const backupSchema = z.object({
 	format: z.literal('think-fast-backup'),
+	flashcards: flashBackupSchema.optional(),
 	version: z.literal(1),
 	exportedAt: isoDateSchema,
 	appVersion: z.string().min(1),

@@ -1,3 +1,4 @@
+import { readFlashBackup } from '#lib/flashcards/backup.js';
 import { getContext, setContext } from 'svelte';
 import {
 	beginSession as persistSessionStart,
@@ -20,7 +21,7 @@ import type {
 import {
 	backupToSnapshot,
 	mergeBackup,
-	serializeBackup,
+	createBackup,
 	triggerJsonDownload
 } from '#lib/services/backup.js';
 
@@ -115,7 +116,9 @@ export class AppState {
 	async exportBackup(): Promise<void> {
 		if (!this.snapshot) throw new Error('There is no local data to export.');
 		const exportedAt = new Date().toISOString();
-		triggerJsonDownload(serializeBackup(this.snapshot, exportedAt), exportedAt);
+		const backup = createBackup(this.snapshot, exportedAt);
+		backup.flashcards = await readFlashBackup();
+		triggerJsonDownload(JSON.stringify(backup, null, 2), exportedAt);
 		const metadata = await markExportSuccessful(exportedAt);
 		this.snapshot = {
 			...this.snapshot,
@@ -131,7 +134,7 @@ export class AppState {
 			mode === 'merge' && this.snapshot
 				? mergeBackup(this.snapshot, backup, now)
 				: backupToSnapshot(backup, now);
-		await replaceAllData(next);
+		await replaceAllData(next, backup.flashcards, mode);
 		this.snapshot = next;
 		this.status = 'ready';
 		this.recoveryRaw = null;

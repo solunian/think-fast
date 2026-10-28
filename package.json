@@ -24,6 +24,8 @@
 		"@sveltejs/vite-plugin-svelte": "^7.1.2",
 		"@tailwindcss/vite": "^4.3.3",
 		"@types/node": "^26.4.0",
+		"@types/papaparse": "^5.5.2",
+		"@types/sql.js": "^1.4.11",
 		"eslint": "^10.9.1",
 		"eslint-plugin-svelte": "^3.23.0",
 		"globals": "^17.11.0",
@@ -38,7 +40,13 @@
 		"vitest": "4.1.11"
 	},
 	"dependencies": {
+		"dompurify": "3.4.17",
+		"fflate": "0.8.3",
+		"fzstd": "0.1.1",
 		"idb": "^8.0.3",
+		"papaparse": "5.7.0",
+		"sql.js": "1.15.2",
+		"ts-fsrs": "5.4.2",
 		"zod": "^4.5.4"
 	},
 	"imports": {

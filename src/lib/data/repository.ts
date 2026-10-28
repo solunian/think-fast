@@ -1,3 +1,4 @@
+import { hydrateLearning, type FlashBackup } from '../flashcards/backup';
 import { deleteDB, openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import { createDefaultMetadata, createDefaultSettings } from '#lib/domain/defaults.js';
 import { migrateStoredSnapshot, StoredDataError } from '#lib/domain/migrations.js';
@@ -10,10 +11,23 @@ import type {
 } from '#lib/domain/types.js';
 
 const DATABASE_NAME = 'think-fast';
-const DATABASE_VERSION = 2;
+const DATABASE_VERSION = 4;
 const CURRENT_KEY = 'current';
 
 interface ThinkFastDatabase extends DBSchema {
+	flashLearning: { key: string; value: import('../flashcards/scheduler').Learning };
+	flashReviews: {
+		key: string;
+		value: import('../flashcards/scheduler').Review;
+		indexes: { 'by-deck': string };
+	};
+	flashDecks: { key: string; value: import('../flashcards/repository').Deck };
+	flashCards: {
+		key: string;
+		value: import('../flashcards/repository').Card;
+		indexes: { 'by-deck': string };
+	};
+	flashProgress: { key: string; value: { id: string; studiedAt: string } };
 	settings: { key: string; value: Settings };
 	sessions: {
 		key: string;
@@ -35,10 +49,24 @@ export type RepositoryProbe =
 
 let databasePromise: Promise<IDBPDatabase<ThinkFastDatabase>> | null = null;
 
-function getDatabase(): Promise<IDBPDatabase<ThinkFastDatabase>> {
+export function getDatabase(): Promise<IDBPDatabase<ThinkFastDatabase>> {
 	if (!databasePromise) {
 		databasePromise = openDB<ThinkFastDatabase>(DATABASE_NAME, DATABASE_VERSION, {
 			upgrade(database) {
+				if (!database.objectStoreNames.contains('flashLearning'))
+					database.createObjectStore('flashLearning', { keyPath: 'id' });
+				if (!database.objectStoreNames.contains('flashReviews'))
+					database
+						.createObjectStore('flashReviews', { keyPath: 'id' })
+						.createIndex('by-deck', 'deckId');
+				if (!database.objectStoreNames.contains('flashDecks'))
+					database.createObjectStore('flashDecks', { keyPath: 'id' });
+				if (!database.objectStoreNames.contains('flashProgress'))
+					database.createObjectStore('flashProgress', { keyPath: 'id' });
+				if (!database.objectStoreNames.contains('flashCards'))
+					database
+						.createObjectStore('flashCards', { keyPath: 'id' })
+						.createIndex('by-deck', 'deckId');
 				if (!database.objectStoreNames.contains('settings')) database.createObjectStore('settings');
 				if (!database.objectStoreNames.contains('metadata')) database.createObjectStore('metadata');
 
@@ -109,10 +137,24 @@ export async function initializeFresh(): Promise<AppSnapshot> {
 	return snapshot;
 }
 
-export async function replaceAllData(snapshot: AppSnapshot): Promise<void> {
+export async function replaceAllData(
+	snapshot: AppSnapshot,
+	flashcards?: FlashBackup,
+	mode: 'merge' | 'replace' = 'replace'
+): Promise<void> {
 	const database = await getDatabase();
 	const transaction = database.transaction(
-		['settings', 'sessions', 'attempts', 'metadata'],
+		[
+			'settings',
+			'sessions',
+			'attempts',
+			'metadata',
+			'flashDecks',
+			'flashCards',
+			'flashProgress',
+			'flashLearning',
+			'flashReviews'
+		],
 		'readwrite'
 	);
 	await Promise.all([
@@ -125,6 +167,36 @@ export async function replaceAllData(snapshot: AppSnapshot): Promise<void> {
 	await transaction.objectStore('metadata').put(snapshot.metadata, CURRENT_KEY);
 	for (const session of snapshot.sessions) await transaction.objectStore('sessions').put(session);
 	for (const attempt of snapshot.attempts) await transaction.objectStore('attempts').put(attempt);
+	if (flashcards) {
+		if (mode === 'replace')
+			for (const store of [
+				'flashDecks',
+				'flashCards',
+				'flashProgress',
+				'flashLearning',
+				'flashReviews'
+			] as const)
+				await transaction.objectStore(store).clear();
+		for (const deck of flashcards.decks)
+			if (mode === 'replace' || !(await transaction.objectStore('flashDecks').get(deck.id)))
+				await transaction.objectStore('flashDecks').put(deck);
+		for (const card of flashcards.cards)
+			if (mode === 'replace' || !(await transaction.objectStore('flashCards').get(card.id)))
+				await transaction.objectStore('flashCards').put(card);
+		for (const progress of flashcards.progress)
+			if (mode === 'replace' || !(await transaction.objectStore('flashProgress').get(progress.id)))
+				await transaction.objectStore('flashProgress').put(progress);
+		for (const state of flashcards.learning)
+			if (mode === 'replace' || !(await transaction.objectStore('flashLearning').get(state.id)))
+				await transaction.objectStore('flashLearning').put(hydrateLearning(state));
+		for (const review of flashcards.reviews)
+			if (mode === 'replace' || !(await transaction.objectStore('flashReviews').get(review.id)))
+				await transaction.objectStore('flashReviews').put({
+					...review,
+					next: hydrateLearning(review.next),
+					previous: review.previous ? hydrateLearning(review.previous) : undefined
+				});
+	}
 	await transaction.done;
 }
 

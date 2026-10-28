@@ -83,6 +83,7 @@ export interface AppSnapshot {
 }
 
 export interface ThinkFastBackup {
+	flashcards?: import('../flashcards/backup').FlashBackup;
 	format: 'think-fast-backup';
 	version: 1;
 	exportedAt: string;

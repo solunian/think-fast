@@ -36,6 +36,7 @@
 				class="rounded-sm px-3 py-2 text-[var(--muted)] no-underline hover:bg-[var(--surface-muted)] aria-[current=page]:text-[var(--ink)]"
 				>Dashboard</a
 			>
+			<a href={resolve('/flashcards')} class="rounded-sm px-3 py-2 no-underline">Flashcards</a>
 			<a
 				href={resolve('history')}
 				aria-current={page.url.pathname === '/history' ? 'page' : undefined}
