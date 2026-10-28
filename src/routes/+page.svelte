@@ -154,13 +154,7 @@
 			class="flex flex-col justify-between gap-5 border-b border-[var(--line)] pb-7 sm:flex-row sm:items-end"
 		>
 			<div>
-				<p class="eyebrow">Practice console</p>
-				<h1 class="mt-2 text-4xl font-semibold tracking-[-0.025em]">
-					Build speed without losing precision.
-				</h1>
-				<p class="mt-3 max-w-2xl text-[var(--muted)]">
-					All calculations and progress remain in this browser.
-				</p>
+				<h1 class="text-4xl font-semibold tracking-[-0.025em]">Dashboard</h1>
 			</div>
 
 			<a class="btn-secondary shrink-0" href={resolve('history')}>Open history</a>
@@ -192,33 +186,42 @@
 
 		<section class="py-9" aria-labelledby="start-title">
 			<div>
-				<p class="eyebrow">Choose a drill</p>
-				<h2 id="start-title" class="mt-1 text-2xl font-medium">Start practice</h2>
+				<h2 id="start-title" class="text-2xl font-medium">Exercises</h2>
 			</div>
-			<div class="mt-5 grid gap-4 md:grid-cols-2">
+			<div class="mt-5 grid gap-4 md:grid-cols-3">
 				<a
 					href={resolve('practice/math')}
 					class="surface group grid min-h-52 content-between rounded-md p-6 text-[var(--ink)] no-underline hover:border-[var(--accent)]"
 					><div>
 						<div class="mono text-sm font-medium text-[var(--accent)]">01 / Arithmetic</div>
-						<h3 class="mt-5 text-3xl font-semibold tracking-tight">Rapid Mental Math</h3>
+						<h3 class="mt-5 text-2xl font-semibold tracking-tight">Mental Math</h3>
 						<p class="mt-3 max-w-md leading-6 text-[var(--muted)]">
-							Exact arithmetic under an 8-minute clock. Reach 80 questions or use the full time.
+							Practice arithmetic against the clock.
 						</p>
 					</div>
-					<span class="mt-6 font-medium text-[var(--accent)]">Configure session →</span></a
+					<span class="mt-6 font-medium text-[var(--accent)]">Practice →</span></a
 				>
 				<a
 					href={resolve('practice/patterns')}
 					class="surface group grid min-h-52 content-between rounded-md p-6 text-[var(--ink)] no-underline hover:border-[var(--accent)]"
 					><div>
 						<div class="mono text-sm font-medium text-[var(--accent)]">02 / Perception</div>
-						<h3 class="mt-5 text-3xl font-semibold tracking-tight">Arrow Patterns</h3>
+						<h3 class="mt-5 text-2xl font-semibold tracking-tight">Arrow Patterns</h3>
 						<p class="mt-3 max-w-md leading-6 text-[var(--muted)]">
-							Decide whether directional grids match. Two minutes, keyboard-first.
+							Decide whether two arrow grids match.
 						</p>
 					</div>
-					<span class="mt-6 font-medium text-[var(--accent)]">Configure session →</span></a
+					<span class="mt-6 font-medium text-[var(--accent)]">Practice →</span></a
+				>
+				<a
+					href={resolve('/flashcards')}
+					class="surface group grid min-h-52 content-between rounded-md p-6 text-[var(--ink)] no-underline hover:border-[var(--accent)]"
+					><div>
+						<div class="mono text-sm font-medium text-[var(--accent)]">03 / Recall</div>
+						<h3 class="mt-5 text-2xl font-semibold tracking-tight">Flashcards</h3>
+						<p class="mt-3 max-w-md leading-6 text-[var(--muted)]">Review cards from your decks.</p>
+					</div>
+					<span class="mt-6 font-medium text-[var(--accent)]">Practice →</span></a
 				>
 			</div>
 		</section>
@@ -228,13 +231,9 @@
 				class="surface rounded-md border-dashed p-8 text-center"
 				aria-labelledby="empty-stats"
 			>
-				<p class="eyebrow">No performance data yet</p>
-				<h2 id="empty-stats" class="mt-2 text-xl font-medium">
-					Your measurements begin with the first answer.
-				</h2>
+				<h2 id="empty-stats" class="text-xl font-medium">No drill results yet</h2>
 				<p class="mx-auto mt-2 max-w-xl text-[var(--muted)]">
-					After practicing, this area will show response-time and accuracy trends, category
-					performance, and recent sessions.
+					Math and pattern results will appear here after practice.
 				</p>
 			</section>
 		{:else}
@@ -290,7 +289,6 @@
 		<section class="border-t border-[var(--line)] py-9" aria-labelledby="recent-title">
 			<div class="flex items-end justify-between">
 				<div>
-					<p class="eyebrow">Local log</p>
 					<h2 id="recent-title" class="mt-1 text-xl font-medium">Recent sessions</h2>
 				</div>
 

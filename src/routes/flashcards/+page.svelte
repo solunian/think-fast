@@ -300,16 +300,15 @@
 <main class:practicing class="flashcards mx-auto max-w-6xl space-y-6 p-4 sm:p-8">
 	{#if !practicing}<div class="page-heading">
 			<div>
-				<p class="eyebrow">YOUR PERSONAL STUDY SPACE</p>
 				<h1 class="text-3xl font-medium">
 					{practicing ? 'Practice' : selected ? 'Deck studio' : 'Flashcards'}
 				</h1>
 				<p class="muted">
 					{practicing
-						? 'One question at a time. Take a breath and focus.'
+						? 'Review your cards.'
 						: selected
-							? 'Shape your knowledge, one card at a time.'
-							: 'Small cards. Lasting knowledge. Pick a deck and keep going.'}
+							? 'Edit cards or start a review.'
+							: 'Choose a deck to review.'}
 				</p>
 			</div>
 			{#if !selected}<button

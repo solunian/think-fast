@@ -68,9 +68,7 @@ function backupFixture() {
 async function startFresh(page: Page) {
 	await page.goto('/');
 	await page.getByTestId('start-fresh').click();
-	await expect(
-		page.getByRole('heading', { name: /Build speed without losing precision/ })
-	).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Dashboard', exact: true })).toBeVisible();
 }
 
 async function countStore(page: Page, storeName: string): Promise<number> {
@@ -118,7 +116,11 @@ test('dashboard and header links navigate between application routes', async ({ 
 	await expect(page).toHaveURL('/settings');
 	await navigation.getByRole('link', { name: 'Dashboard' }).click();
 	await expect(page).toHaveURL('/');
-	await page.getByRole('link', { name: /Rapid Mental Math/ }).click();
+	await page.getByRole('link', { name: /03 \/ Recall Flashcards/ }).click();
+	await expect(page).toHaveURL('/flashcards');
+	await expect(page.getByRole('heading', { name: 'Flashcards', exact: true })).toBeVisible();
+	await navigation.getByRole('link', { name: 'Dashboard' }).click();
+	await page.getByRole('link', { name: /Mental Math/ }).click();
 	await expect(page).toHaveURL('/practice/math');
 	await expect(page.getByTestId('start-math')).toBeVisible();
 });

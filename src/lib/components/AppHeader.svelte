@@ -24,9 +24,6 @@
 			aria-label="Think Fast dashboard"
 		>
 			<span class="text-lg font-semibold tracking-[-0.04em] text-[var(--ink)]">Think Fast</span>
-			<span class="hidden text-xs font-medium tracking-normal text-[var(--muted)] sm:inline"
-				>Local training</span
-			>
 		</a>
 
 		<nav aria-label="Primary" class="flex items-center gap-1 text-sm font-semibold">
