@@ -31,6 +31,11 @@ bun run build
 bun run preview
 ```
 
+For Vercel, `vercel.json` sets the build command and `build` output directory,
+serves prerendered pages without `.html` extensions, and rewrites dynamic flashcard
+URLs to the fallback page. These repository settings override the corresponding
+Vercel project settings.
+
 ## Validation
 
 ```sh

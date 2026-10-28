@@ -1,0 +1,11 @@
+{
+	"$schema": "https://openapi.vercel.sh/vercel.json",
+	"framework": null,
+	"buildCommand": "bun run build",
+	"outputDirectory": "build",
+	"cleanUrls": true,
+	"rewrites": [
+		{ "source": "/flashcards/:deck_id", "destination": "/200" },
+		{ "source": "/flashcards/:deck_id/study", "destination": "/200" }
+	]
+}
