@@ -21,8 +21,10 @@ bun install
 bun run dev
 ```
 
-The production output is a client-rendered, fully prerendered static application. On supported
-platforms such as Vercel, `adapter-static` uses its zero-config output automatically:
+The production output is a client-rendered static application. Fixed routes are prerendered;
+local deck pages (`/flashcards/[deck_id]`) and study pages (`/flashcards/[deck_id]/study`)
+load through the generated `200.html` fallback. Configure static hosting to serve `200.html`
+for paths that do not match an existing file so direct links and reloads work:
 
 ```sh
 bun run build
