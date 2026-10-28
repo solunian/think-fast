@@ -7,7 +7,33 @@
 		download
 	} from '#lib/flashcards/transfer.js';
 	import { onMount } from 'svelte';
+	import { afterNavigate } from '$app/navigation';
 	import * as repo from '#lib/flashcards/repository.js';
+	let creating = $state(false);
+	let creationMode = $state<'empty' | 'import'>('empty');
+	let sessionSize = $state(0);
+	let deckStats = $state<
+		Record<string, Awaited<ReturnType<typeof repo.summary>> & { count: number }>
+	>({});
+	async function refreshLibrary() {
+		library = await repo.decks();
+		deckStats = Object.fromEntries(
+			await Promise.all(
+				library.map(async (deck) => {
+					const cards = await repo.cards(deck.id);
+					return [deck.id, { ...(await repo.summary(cards)), count: cards.length }];
+				})
+			)
+		);
+		loading = false;
+	}
+	afterNavigate(() => {
+		selected = null;
+		practicing = false;
+		creating = false;
+		search = '';
+		void run(refreshLibrary);
+	});
 	let mode = $state('random');
 	let schedule =
 		$state<Awaited<ReturnType<typeof import('../../lib/flashcards/scheduler').predictions>>>();
@@ -34,7 +60,7 @@
 	let description = $state('');
 	let front = $state('');
 	let back = $state('');
-	let editing = $state<string | null>(null);
+
 	let search = $state('');
 	let studied = $state(0);
 	let stats = $state<Awaited<ReturnType<typeof repo.summary>>>();
@@ -60,19 +86,20 @@
 	}
 	onMount(() => {
 		void run(async () => {
-			library = await repo.decks();
+			await refreshLibrary();
 			loading = false;
 		});
 	});
 	async function open(deck: repo.Deck) {
 		selected = deck;
+		creating = false;
+		search = '';
 		name = deck.name;
 		description = deck.description;
 		items = await repo.cards(deck.id);
 		stats = await repo.summary(items);
 		studied = await repo.coverage(items);
 		practicing = false;
-		editing = null;
 		front = '';
 		back = '';
 	}
@@ -80,14 +107,13 @@
 		if (!name.trim()) throw new Error('Enter a deck name.');
 		const deck = { id: crypto.randomUUID(), name: name.trim(), description };
 		await repo.saveDeck(deck);
-		library = await repo.decks();
+		await refreshLibrary();
 		await open(deck);
 	}
 	async function save() {
 		if (!selected) return;
-		await repo.saveCard({ id: editing ?? crypto.randomUUID(), deckId: selected.id, front, back });
+		await repo.saveCard({ id: crypto.randomUUID(), deckId: selected.id, front, back });
 		items = await repo.cards(selected.id);
-		editing = null;
 		front = '';
 		back = '';
 	}
@@ -106,6 +132,8 @@
 			const j = Math.floor(Math.random() * (i + 1));
 			[queue[i], queue[j]] = [queue[j], queue[i]];
 		}
+		sessionSize = queue.length;
+		lastReview = undefined;
 		practicing = true;
 		revealed = false;
 		await prepareSchedule();
@@ -191,7 +219,7 @@
 			)
 				return;
 			await repo.restoreDocument(restore);
-			library = await repo.decks();
+			await refreshLibrary();
 			await open(restore.deck);
 			restore = null;
 			preview = null;
@@ -215,30 +243,48 @@
 		preview = null;
 		restore = null;
 		importText = '';
-		library = await repo.decks();
+		await refreshLibrary();
 		await open(deck);
 	}
 	async function rename() {
 		if (!selected || !name.trim()) throw new Error('Enter a deck name.');
 		selected = { ...selected, name: name.trim(), description };
 		await repo.saveDeck(selected);
-		library = await repo.decks();
+		await refreshLibrary();
 	}
 </script>
 
 <svelte:head><title>Flashcards · Think Fast</title></svelte:head>
-<main class="mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
-	<p class="eyebrow">Local training · Default profile</p>
-	<h1 class="text-3xl font-medium">Flashcards</h1>
-	<p class="muted">
-		Create a deck, add questions, and practice at your own pace. Saved on this device.
-	</p>
+<main class="flashcards mx-auto max-w-6xl space-y-6 p-4 sm:p-8">
+	<div class="page-heading">
+		<div>
+			<p class="eyebrow">YOUR PERSONAL STUDY SPACE</p>
+			<h1 class="text-3xl font-medium">
+				{practicing ? 'Practice' : selected ? 'Deck studio' : 'Flashcards'}
+			</h1>
+			<p class="muted">
+				{practicing
+					? 'One question at a time. Take a breath and focus.'
+					: selected
+						? 'Shape your knowledge, one card at a time.'
+						: 'Small cards. Lasting knowledge. Pick a deck and keep going.'}
+			</p>
+		</div>
+		{#if !selected}<button
+				class="btn-primary"
+				onclick={() => {
+					creating = !creating;
+					name = '';
+					description = '';
+				}}>+ Create deck</button
+			>{/if}
+	</div>
 	{#if error}<p role="alert" class="surface p-4 text-[var(--danger)]">
 			{error}
 			<button
 				onclick={() =>
 					run(async () => {
-						library = await repo.decks();
+						await refreshLibrary();
 						loading = false;
 					})}>Retry loading</button
 			>
@@ -252,73 +298,95 @@
 				name = '';
 				description = '';
 				practicing = false;
+				search = '';
+				void run(refreshLibrary);
 			}}>All decks</button
 		>
-		<section class="surface space-y-4 p-5">
-			<h2 class="text-2xl font-medium">{selected.name}</h2>
-			<details>
-				<summary>Rename / description</summary>
-				<label class="field"><span>Name</span><input class="input" bind:value={name} /></label>
-				<label class="field"
-					><span>Description</span><input class="input" bind:value={description} /></label
-				>
-				<button class="btn-secondary" disabled={busy} onclick={() => run(rename)}>Save deck</button>
-			</details>
-			<details>
-				<summary>Export deck</summary>
+		{#if !practicing}
+			<section class="surface deck-overview space-y-4 p-6">
+				<h2 class="text-2xl font-medium">{selected.name}</h2>
+				<details>
+					<summary>Rename / description</summary>
+					<label class="field"><span>Name</span><input class="input" bind:value={name} /></label>
+					<label class="field"
+						><span>Description</span><input class="input" bind:value={description} /></label
+					>
+					<button class="btn-secondary" disabled={busy} onclick={() => run(rename)}
+						>Save deck</button
+					>
+				</details>
+				<details>
+					<summary>Export deck</summary>
+					<p>
+						CSV contains plain text cards only. Spreadsheet-sensitive text uses reversible
+						apostrophe escaping. JSON preserves content IDs. Progress can optionally be included in
+						JSON.
+					</p>
+					<button
+						class="btn-secondary"
+						onclick={() => {
+							if (selected)
+								download(
+									exportCsv(selected, items),
+									selected.name + '.csv',
+									'text/csv;charset=utf-8'
+								);
+						}}>Export CSV</button
+					>
+					<label
+						><input type="checkbox" bind:checked={includeProgress} /> Include default profile progress
+						and review history</label
+					>
+					<button class="btn-secondary" disabled={busy} onclick={() => run(downloadDeckJson)}
+						>Export JSON</button
+					>
+				</details>
+				<p>{selected.description}</p>
 				<p>
-					CSV contains plain text cards only. Spreadsheet-sensitive text uses reversible apostrophe
-					escaping. JSON preserves content IDs. Progress can optionally be included in JSON.
+					{items.length} cards · Studied {studied}/{items.length}{items.length
+						? ' (' + Math.round((studied / items.length) * 100) + '%)'
+						: ''}
 				</p>
-				<button
-					class="btn-secondary"
-					onclick={() => {
-						if (selected)
-							download(
-								exportCsv(selected, items),
-								selected.name + '.csv',
-								'text/csv;charset=utf-8'
-							);
-					}}>Export CSV</button
+				{#if stats}<p>
+						New {stats.new} · Learning {stats.learning} · Review {stats.review} · Due {stats.due}
+					</p>
+					<p>Last studied: {stats.last ? new Date(stats.last).toLocaleString() : 'Never'}</p>{/if}
+				<label class="field"
+					><span>Study mode</span><select class="input" bind:value={mode}
+						><option value="random">Random practice</option><option value="scheduled"
+							>FSRS review</option
+						></select
+					></label
 				>
-				<label
-					><input type="checkbox" bind:checked={includeProgress} /> Include default profile progress and
-					review history</label
-				>
-				<button class="btn-secondary" disabled={busy} onclick={() => run(downloadDeckJson)}
-					>Export JSON</button
-				>
-			</details>
-			<p>{selected.description}</p>
-			<p>
-				{items.length} cards · Studied {studied}/{items.length}{items.length
-					? ' (' + Math.round((studied / items.length) * 100) + '%)'
-					: ''}
-			</p>
-			{#if stats}<p>
-					New {stats.new} · Learning {stats.learning} · Review {stats.review} · Due {stats.due}
+				<p class="muted">
+					Random practice leaves schedules unchanged. FSRS selects up to 100 due or new cards per
+					pass.
 				</p>
-				<p>Last studied: {stats.last ? new Date(stats.last).toLocaleString() : 'Never'}</p>{/if}
-			<label class="field"
-				><span>Study mode</span><select class="input" bind:value={mode}
-					><option value="random">Random practice</option><option value="scheduled"
-						>FSRS review</option
-					></select
-				></label
-			>
-			<p class="muted">
-				Random practice leaves schedules unchanged. FSRS selects up to 100 due or new cards per
-				pass.
-			</p>
-			<button class="btn-primary" disabled={busy || !items.length} onclick={() => run(start)}
-				>Study</button
-			>
-		</section>
+				<button class="btn-primary" disabled={busy || !items.length} onclick={() => run(start)}
+					>Study</button
+				>
+			</section>
+		{/if}
 		{#if practicing}
-			<section class="surface space-y-5 p-6">
+			<section class="surface practice-stage space-y-5 p-6 sm:p-10">
+				<div class="practice-top">
+					<span class="eyebrow">{selected.name}</span><span class="muted"
+						>{mode === 'scheduled' ? 'Spaced repetition' : 'Random practice'}</span
+					>
+				</div>
+				<progress
+					max={sessionSize || 1}
+					value={sessionSize - queue.length}
+					aria-label="Practice progress"
+				></progress>
+				<p class="muted">
+					{items.length} cards · Studied {studied}/{items.length}{items.length
+						? ' (' + Math.round((studied / items.length) * 100) + '%)'
+						: ''}
+				</p>
 				{#if queue[0]}
 					<p>{queue.length} remaining</p>
-					<p class="whitespace-pre-wrap text-2xl">{queue[0].front}</p>
+					<p class="practice-question whitespace-pre-wrap text-2xl">{queue[0].front}</p>
 					{#if revealed}
 						<p class="whitespace-pre-wrap border-t border-[var(--line)] pt-5">{queue[0].back}</p>
 						{#if mode === 'scheduled'}
@@ -355,178 +423,403 @@
 				<button class="btn-quiet" onclick={() => (practicing = false)}>End practice</button>
 			</section>
 		{:else}
-			<form
-				class="surface space-y-3 p-5"
-				onsubmit={(e) => {
-					e.preventDefault();
-					void run(save);
-				}}
-			>
-				<h2 class="text-xl font-medium">{editing ? 'Edit card' : 'Add card'}</h2>
-				{#if editing}<button
-						type="button"
-						class="btn-danger"
-						disabled={busy}
-						onclick={() =>
-							run(async () => {
-								if (
-									editing &&
-									confirm('Delete this card? Historical review records will be retained.')
-								) {
-									await repo.removeCard(editing);
-									items = await repo.cards(selected!.id);
-									editing = null;
-									front = '';
-									back = '';
-									studied = await repo.coverage(items);
-								}
-							})}>Delete card</button
-					>{/if}
+			<div class="page-heading">
+				<div>
+					<h2 class="text-xl font-medium">Cards <span class="muted">/ {items.length}</span></h2>
+					<p class="muted">Edit a card in place, or add something new.</p>
+				</div>
 				<label class="field"
-					><span>Front</span><textarea class="input" bind:value={front} required></textarea></label
+					><span>Search cards</span><input
+						class="input"
+						placeholder="Find a question or answer…"
+						bind:value={search}
+					/></label
 				>
-				<label class="field"
-					><span>Back</span><textarea class="input" bind:value={back} required></textarea></label
+			</div>
+			<div class="card-grid">
+				<form
+					class="surface card-tile new-card space-y-3"
+					onsubmit={(e) => {
+						e.preventDefault();
+						void run(save);
+					}}
 				>
-				<button class="btn-primary" disabled={busy}>Save and add another</button>
-			</form>
-			<label class="field"
-				><span>Search cards</span><input class="input" bind:value={search} /></label
-			>
-			{#each items
-				.filter((c) => (c.front + ' ' + c.back).toLowerCase().includes(search.toLowerCase()))
-				.slice(0, 100) as card (card.id)}
-				<button
-					class="surface block w-full p-4 text-left"
-					onclick={() => {
-						editing = card.id;
-						front = card.front;
-						back = card.back;
-					}}>{card.front}<span class="muted float-right">Edit</span></button
-				>
-			{/each}
-			{#if items.length > 100}<p>Showing up to 100 matches. Search to narrow results.</p>{/if}
+					<p class="eyebrow">+ NEW CARD</p>
+					<label class="field"
+						><span>Front</span><textarea
+							class="input"
+							placeholder="Write a question…"
+							bind:value={front}
+							required></textarea></label
+					>
+					<label class="field"
+						><span>Back</span><textarea
+							class="input"
+							placeholder="Add the answer…"
+							bind:value={back}
+							required></textarea></label
+					>
+					<button class="btn-primary" disabled={busy}>Save and add another</button>
+				</form>
+				{#each items
+					.filter((c) => (c.front + ' ' + c.back).toLowerCase().includes(search.toLowerCase()))
+					.slice(0, 100) as card (card.id)}
+					<form
+						class="surface card-tile space-y-3"
+						onsubmit={(e) => {
+							e.preventDefault();
+							void run(async () => {
+								await repo.saveCard({ ...card });
+								items = await repo.cards(selected!.id);
+							});
+						}}
+					>
+						<p class="eyebrow">QUESTION & ANSWER</p>
+						<label class="field"
+							><span>Front</span><textarea class="input" bind:value={card.front} required
+							></textarea></label
+						>
+						<label class="field"
+							><span>Back</span><textarea class="input" bind:value={card.back} required
+							></textarea></label
+						>
+						<div class="tile-actions">
+							<button class="btn-secondary" disabled={busy}>Save card</button><button
+								type="button"
+								class="btn-quiet"
+								disabled={busy}
+								onclick={() =>
+									run(async () => {
+										if (confirm('Delete this card? Historical review records will be retained.')) {
+											await repo.removeCard(card.id);
+											items = await repo.cards(selected!.id);
+											studied = await repo.coverage(items);
+										}
+									})}>Delete card</button
+							>
+						</div>
+					</form>
+				{/each}
+			</div>
+			{#if items.length > 100}<p class="muted">
+					Showing up to 100 matches. Search to narrow results.
+				</p>{/if}
 		{/if}
 	{:else}
-		<form
-			class="surface space-y-3 p-5"
-			onsubmit={(e) => {
-				e.preventDefault();
-				void run(create);
-			}}
-		>
-			<h2 class="text-xl font-medium">Create deck</h2>
-			<label class="field"
-				><span>Name</span><input class="input" bind:value={name} required /></label
-			>
-			<label class="field"
-				><span>Description (optional)</span><input class="input" bind:value={description} /></label
-			>
-			<button class="btn-primary" disabled={busy}>Create deck</button>
-		</form>
-		<section class="surface space-y-3 p-5">
-			<h2 class="text-xl font-medium">Import CSV / Anki / deck JSON</h2>
-			<p class="muted">
-				Anki: legacy packages only, plain text, fresh learning. Media and custom templates are not
-				supported. Maximum file size: 20 MB.
-			</p>
-			{#if busy && ankiWorker}<button class="btn-secondary" onclick={() => cancelImport?.()}
-					>Cancel parsing</button
-				>{/if}
-			<label class="field"
-				><span>Delimiter</span><select class="input" bind:value={delimiter}
-					><option value=",">Comma</option><option value=";">Semicolon</option><option value="&#9;"
-						>Tab</option
-					></select
-				></label
-			>
-			<label><input type="checkbox" bind:checked={header} /> First row is a header</label>
-			<label class="field"
-				><span>Front column (zero-based)</span><input
-					type="number"
-					min="0"
-					class="input"
-					bind:value={frontColumn}
-				/></label
-			>
-			<label class="field"
-				><span>Back column (zero-based)</span><input
-					type="number"
-					min="0"
-					class="input"
-					bind:value={backColumn}
-				/></label
-			>
-			<input
-				aria-label="Import file"
-				type="file"
-				accept=".csv,.tsv,.json,.apkg"
-				disabled={busy}
-				onchange={(e) => run(() => readFile(e.currentTarget.files?.[0]))}
-			/>
-			{#each ankiWarnings as warning, i (i)}<p role="status">{warning}</p>{/each}
-			{#if preview || restore}
-				<h3 class="font-medium">Import preview</h3>
-				{#if restore}<label
-						><input type="checkbox" bind:checked={preserveIdentity} /> Restore original IDs and optional
-						progress (existing local progress wins)</label
-					>{/if}
-				<p>Existing decks and progress will be preserved. Extra CSV columns are ignored.</p>
-				<label class="field"
-					><span>New deck name</span><input class="input" bind:value={importName} /></label
-				>
-				{#if preview}
-					<button
-						class="btn-secondary"
-						onclick={() =>
-							(preview = parseCsv(importText, delimiter, header, frontColumn, backColumn))}
-						>Apply column mapping</button
+		{#if creating}
+			<section class="surface creation-panel space-y-5 p-6">
+				<div class="page-heading">
+					<div>
+						<p class="eyebrow">BUILD YOUR COLLECTION</p>
+						<h2 class="text-2xl font-medium">Create a deck</h2>
+					</div>
+					<button class="btn-quiet" onclick={() => (creating = false)}>Close</button>
+				</div>
+				<div class="creation-tabs">
+					<button class:active={creationMode === 'empty'} onclick={() => (creationMode = 'empty')}
+						>Start from scratch</button
+					><button
+						class:active={creationMode === 'import'}
+						onclick={() => (creationMode = 'import')}>Import a deck</button
 					>
-					<p>
-						{preview.cards.length} valid cards · {preview.duplicates} exact duplicate rows (kept)
-					</p>
-					{#each preview.errors as message, i (i)}<p class="text-[var(--danger)]">
-							{message}
-						</p>{/each}
-					{#if preview.errors.length}<label
-							><input type="checkbox" bind:checked={skipInvalid} /> Import valid rows and skip the reported
-							errors</label
-						>{/if}
+				</div>
+				{#if creationMode === 'empty'}
+					<form
+						class="surface space-y-3 p-5"
+						onsubmit={(e) => {
+							e.preventDefault();
+							void run(create);
+						}}
+					>
+						<h2 class="text-xl font-medium">Create deck</h2>
+						<label class="field"
+							><span>Name</span><input class="input" bind:value={name} required /></label
+						>
+						<label class="field"
+							><span>Description (optional)</span><input
+								class="input"
+								bind:value={description}
+							/></label
+						>
+						<button class="btn-primary" disabled={busy}>Create deck</button>
+					</form>
+				{:else}
+					<section class="space-y-3">
+						<h2 class="text-xl font-medium">Import CSV / Anki / deck JSON</h2>
+						<p class="muted">
+							Anki: legacy packages only, plain text, fresh learning. Media and custom templates are
+							not supported. Maximum file size: 20 MB.
+						</p>
+						{#if busy && ankiWorker}<button class="btn-secondary" onclick={() => cancelImport?.()}
+								>Cancel parsing</button
+							>{/if}
+						<label class="field"
+							><span>Delimiter</span><select class="input" bind:value={delimiter}
+								><option value=",">Comma</option><option value=";">Semicolon</option><option
+									value="&#9;">Tab</option
+								></select
+							></label
+						>
+						<label><input type="checkbox" bind:checked={header} /> First row is a header</label>
+						<label class="field"
+							><span>Front column (zero-based)</span><input
+								type="number"
+								min="0"
+								class="input"
+								bind:value={frontColumn}
+							/></label
+						>
+						<label class="field"
+							><span>Back column (zero-based)</span><input
+								type="number"
+								min="0"
+								class="input"
+								bind:value={backColumn}
+							/></label
+						>
+						<input
+							aria-label="Import file"
+							type="file"
+							accept=".csv,.tsv,.json,.apkg"
+							disabled={busy}
+							onchange={(e) => run(() => readFile(e.currentTarget.files?.[0]))}
+						/>
+						{#each ankiWarnings as warning, i (i)}<p role="status">{warning}</p>{/each}
+						{#if preview || restore}
+							<h3 class="font-medium">Import preview</h3>
+							{#if restore}<label
+									><input type="checkbox" bind:checked={preserveIdentity} /> Restore original IDs and
+									optional progress (existing local progress wins)</label
+								>{/if}
+							<p>Existing decks and progress will be preserved. Extra CSV columns are ignored.</p>
+							<label class="field"
+								><span>New deck name</span><input class="input" bind:value={importName} /></label
+							>
+							{#if preview}
+								<button
+									class="btn-secondary"
+									onclick={() =>
+										(preview = parseCsv(importText, delimiter, header, frontColumn, backColumn))}
+									>Apply column mapping</button
+								>
+								<p>
+									{preview.cards.length} valid cards · {preview.duplicates} exact duplicate rows (kept)
+								</p>
+								{#each preview.errors as message, i (i)}<p class="text-[var(--danger)]">
+										{message}
+									</p>{/each}
+								{#if preview.errors.length}<label
+										><input type="checkbox" bind:checked={skipInvalid} /> Import valid rows and skip the
+										reported errors</label
+									>{/if}
+							{/if}
+							{#each (restore?.cards ?? preview?.cards ?? []).slice(0, 5) as card, i (i)}<p
+									class="whitespace-pre-wrap"
+								>
+									{card.front} → {card.back}
+								</p>{/each}
+							<button
+								class="btn-primary"
+								disabled={busy || (!!preview?.errors.length && !skipInvalid)}
+								onclick={() => run(commitImport)}
+								>{preserveIdentity && restore
+									? 'Restore / update deck'
+									: 'Import as new deck'}</button
+							>
+							<button
+								class="btn-secondary"
+								disabled={busy}
+								onclick={() => {
+									preview = null;
+									restore = null;
+									importText = '';
+								}}>Cancel</button
+							>
+						{/if}
+					</section>
 				{/if}
-				{#each (restore?.cards ?? preview?.cards ?? []).slice(0, 5) as card, i (i)}<p
-						class="whitespace-pre-wrap"
-					>
-						{card.front} → {card.back}
-					</p>{/each}
-				<button
-					class="btn-primary"
-					disabled={busy || (!!preview?.errors.length && !skipInvalid)}
-					onclick={() => run(commitImport)}
-					>{preserveIdentity && restore ? 'Restore / update deck' : 'Import as new deck'}</button
-				>
-				<button
-					class="btn-secondary"
-					disabled={busy}
-					onclick={() => {
-						preview = null;
-						restore = null;
-						importText = '';
-					}}>Cancel</button
-				>
-			{/if}
-		</section>
+			</section>
+		{/if}
+		<div class="page-heading">
+			<h2 class="text-xl font-medium">Your decks <span class="muted">/ {library.length}</span></h2>
+			<p class="muted">Saved on this device · Default profile</p>
+		</div>
 		<label class="field"><span>Search decks</span><input class="input" bind:value={search} /></label
 		>
-		{#each library.filter((d) => d.name
-				.toLowerCase()
-				.includes(search.toLowerCase())) as deck (deck.id)}
-			<button
-				class="surface block w-full p-5 text-left"
-				disabled={busy}
-				onclick={() => run(() => open(deck))}
-				><strong>{deck.name}</strong>
-				<p class="muted">{deck.description}</p></button
-			>
-		{:else}<p>No decks found. Create your first deck above.</p>{/each}
+		<div class="deck-grid">
+			{#each library.filter((d) => (d.name + ' ' + d.description)
+					.toLowerCase()
+					.includes(search.toLowerCase())) as deck (deck.id)}
+				<button class="surface deck-tile" disabled={busy} onclick={() => run(() => open(deck))}>
+					<div class="tile-actions">
+						<span class="deck-icon" aria-hidden="true">▤</span><span class="badge"
+							>{deckStats[deck.id]?.due ?? 0} due</span
+						>
+					</div>
+					<h3 class="text-xl font-medium">{deck.name}</h3>
+					<p class="muted deck-description">
+						{deck.description || 'A fresh space for everything you want to remember.'}
+					</p>
+					<div class="deck-numbers">
+						<div><strong>{deckStats[deck.id]?.count ?? 0}</strong><span>Cards</span></div>
+						<div><strong>{deckStats[deck.id]?.new ?? 0}</strong><span>New</span></div>
+						<div><strong>{deckStats[deck.id]?.studied ?? 0}</strong><span>Studied</span></div>
+					</div>
+					<p class="muted text-sm">
+						Last studied: {deckStats[deck.id]?.last
+							? new Date(deckStats[deck.id].last).toLocaleDateString()
+							: 'Not yet'}
+					</p>
+					<span class="deck-link">Open deck <span aria-hidden="true">↗</span></span>
+				</button>
+			{:else}<div class="surface empty-state">
+					<h3 class="text-xl font-medium">
+						{search ? 'No matching decks' : 'Your next learning habit starts here'}
+					</h3>
+					<p class="muted">
+						{search
+							? 'Try another search.'
+							: 'Create your first deck from scratch or import cards you already have.'}
+					</p>
+					<button class="btn-secondary" onclick={() => (creating = true)}>Create a deck</button>
+				</div>{/each}
+		</div>
 	{/if}
 </main>
+
+<style>
+	.page-heading,
+	.tile-actions,
+	.practice-top {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		flex-wrap: wrap;
+	}
+	.page-heading h1 {
+		margin: 0.3rem 0;
+	}
+	.deck-grid,
+	.card-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+		gap: 1.25rem;
+	}
+	.deck-tile {
+		padding: 1.5rem;
+		text-align: left;
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		transition:
+			transform 0.18s,
+			border-color 0.18s;
+	}
+	.deck-tile:hover {
+		transform: translateY(-3px);
+		border-color: var(--accent);
+	}
+	.deck-icon {
+		background: var(--accent-soft);
+		color: var(--accent);
+		border-radius: 12px;
+		padding: 0.25rem 0.8rem;
+		font-size: 1.8rem;
+	}
+	.badge {
+		border-radius: 99px;
+		background: var(--surface-muted);
+		padding: 0.25rem 0.7rem;
+		font-size: 0.75rem;
+	}
+	.deck-description {
+		min-height: 3.2em;
+		overflow-wrap: anywhere;
+	}
+	.deck-numbers {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		border-block: 1px solid var(--line);
+		padding: 1rem 0;
+	}
+	.deck-numbers strong {
+		display: block;
+		font-size: 1.4rem;
+		font-weight: 500;
+	}
+	.deck-numbers span {
+		color: var(--muted);
+		font-size: 0.8rem;
+	}
+	.deck-link {
+		display: flex;
+		justify-content: space-between;
+		color: var(--accent);
+		font-weight: 600;
+		margin-top: auto;
+	}
+	.creation-panel {
+		border-color: var(--accent);
+	}
+	.creation-tabs {
+		display: flex;
+		gap: 0.5rem;
+		padding: 0.35rem;
+		background: var(--surface-muted);
+		border-radius: 12px;
+	}
+	.creation-tabs button {
+		flex: 1;
+		padding: 0.65rem;
+		border-radius: 8px;
+	}
+	.creation-tabs .active {
+		background: var(--surface);
+		color: var(--accent);
+		box-shadow: 0 2px 6px #0000000a;
+	}
+	.card-tile {
+		padding: 1.4rem;
+	}
+	.card-tile textarea {
+		min-height: 110px;
+		resize: vertical;
+	}
+	.new-card {
+		border-style: dashed;
+		background: var(--accent-soft);
+	}
+	.empty-state {
+		grid-column: 1/-1;
+		padding: 3rem 1.5rem;
+		text-align: center;
+	}
+	.empty-state p {
+		margin: 0.75rem 0 1.5rem;
+	}
+	.practice-stage {
+		max-width: 800px;
+		margin: 2rem auto;
+	}
+	.practice-question {
+		min-height: 180px;
+		display: grid;
+		place-content: center;
+		text-align: center;
+		overflow-wrap: anywhere;
+	}
+	progress {
+		width: 100%;
+		height: 6px;
+		accent-color: var(--accent);
+	}
+	details {
+		border-top: 1px solid var(--line);
+		padding-top: 0.75rem;
+	}
+	summary {
+		cursor: pointer;
+		color: var(--muted);
+	}
+</style>
