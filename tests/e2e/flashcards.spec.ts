@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 test('create, edit, study and reload preserves card coverage', async ({ page }) => {
 	await page.goto('/');
 	await page.getByTestId('start-fresh').click();
-	await page.getByRole('link', { name: 'Flashcards', exact: true }).click();
+	await page.getByRole('link', { name: /03 \/ Recall Flashcards/ }).click();
 	await page.getByRole('button', { name: '+ Create deck', exact: true }).click();
 	await page.getByLabel('Name', { exact: true }).fill('Biology');
 	await page.getByRole('button', { name: 'Create deck', exact: true }).click();
@@ -12,7 +12,7 @@ test('create, edit, study and reload preserves card coverage', async ({ page }) 
 	await page.getByLabel('Back', { exact: true }).first().fill('Mitochondrion');
 	await page.getByRole('button', { name: 'Save and add another' }).click();
 	await expect(
-		page.getByRole('region', { name: 'Deck overview' }).getByText('0 / 1')
+		page.getByRole('region', { name: 'Deck overview' }).getByText('New 100%', { exact: true })
 	).toBeVisible();
 	await expect(page.getByText('Deck studio')).toHaveCount(0);
 	await page.getByRole('button', { name: 'Edit details' }).click();
@@ -26,7 +26,7 @@ test('create, edit, study and reload preserves card coverage', async ({ page }) 
 	await expect(page.getByLabel('Deck name', { exact: true })).toHaveCount(0);
 	await page.getByLabel('Back', { exact: true }).last().fill('Mitochondrion — makes ATP');
 	await page.getByRole('button', { name: 'Save card', exact: true }).click();
-	await page.getByRole('link', { name: 'Flashcards', exact: true }).click();
+	await page.getByRole('link', { name: '← All decks', exact: true }).click();
 	await expect(page.getByRole('heading', { name: 'Your decks' })).toBeVisible();
 	await page.getByRole('link', { name: /Biology/ }).click();
 	await expect(page.getByLabel('Back', { exact: true }).last()).toHaveValue(
@@ -65,7 +65,7 @@ test('create, edit, study and reload preserves card coverage', async ({ page }) 
 	await expect(page).toHaveURL(new RegExp(`${deckUrl}\\?`));
 	await page.reload();
 	await expect(
-		page.getByRole('region', { name: 'Deck overview' }).getByText('1 / 1')
+		page.getByRole('region', { name: 'Deck overview' }).getByText('Learning 100%', { exact: true })
 	).toBeVisible();
 	await expect(page.getByRole('heading', { name: 'Biology notes', exact: true })).toBeVisible();
 });
@@ -90,7 +90,7 @@ test('CSV preview allows cancellation without changing library', async ({ page }
 test('FSRS includes matching cards even before their next scheduled review', async ({ page }) => {
 	await page.goto('/');
 	await page.getByTestId('start-fresh').click();
-	await page.getByRole('link', { name: 'Flashcards', exact: true }).click();
+	await page.getByRole('link', { name: /03 \/ Recall Flashcards/ }).click();
 	await page.getByRole('button', { name: '+ Create deck', exact: true }).click();
 	await page.getByLabel('Name', { exact: true }).fill('Early review');
 	await page.getByRole('button', { name: 'Create deck', exact: true }).click();

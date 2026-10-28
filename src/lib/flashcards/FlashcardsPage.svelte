@@ -88,6 +88,22 @@
 		review: items.filter((card) => cardStatuses[card.id] === 'review').length,
 		memorized: items.filter((card) => cardStatuses[card.id] === 'memorized').length
 	});
+	// Each layer includes every card at that memory level or higher.
+	const progressLayers = $derived({
+		learning: items.length
+			? ((statusCounts.learning + statusCounts.review + statusCounts.memorized) / items.length) *
+				100
+			: 0,
+		review: items.length
+			? ((statusCounts.review + statusCounts.memorized) / items.length) * 100
+			: 0,
+		memorized: items.length ? (statusCounts.memorized / items.length) * 100 : 0
+	});
+	const progressPercent = $derived(
+		statusCounts.memorized === items.length && items.length > 0
+			? 100
+			: Math.min(99, Math.round(progressLayers.memorized))
+	);
 	const matchingCards = $derived(
 		items.filter((card) => selectedStatuses.includes(cardStatuses[card.id] ?? 'new')).length
 	);
@@ -388,15 +404,22 @@
 						<p class="muted">{items.length} {items.length === 1 ? 'card' : 'cards'} total</p>
 						{#if selected.description}<p class="muted">{selected.description}</p>{/if}
 					</div>
-					<button
-						class="btn-secondary"
-						aria-expanded={editingDetails}
-						onclick={() => {
-							name = selected!.name;
-							description = selected!.description;
-							editingDetails = !editingDetails;
-						}}>Edit details</button
-					>
+					<div class="deck-heading-actions">
+						<button
+							class="btn-secondary"
+							aria-expanded={editingDetails}
+							onclick={() => {
+								name = selected!.name;
+								description = selected!.description;
+								editingDetails = !editingDetails;
+							}}>Edit details</button
+						>
+						<p class="last-studied muted">
+							Last studied <span
+								>{stats?.last ? new Date(stats.last).toLocaleString() : 'Never'}</span
+							>
+						</p>
+					</div>
 				</div>
 				{#if editingDetails}
 					<form
@@ -453,19 +476,36 @@
 					</dl>
 					<div class="coverage-row">
 						<div class="coverage-meter">
-							<div class="coverage-label">
-								<span>Studied <strong>{studied} / {items.length}</strong></span><span
-									>{items.length ? Math.round((studied / items.length) * 100) : 0}%</span
-								>
+							<div class="mastery-legend">
+								{#each allStatuses as status (status)}
+									<span
+										><i class={status}></i>{studyLabels[status]}
+										<strong
+											>{items.length
+												? Math.round((statusCounts[status] / items.length) * 100)
+												: 0}%</strong
+										></span
+									>
+								{/each}
 							</div>
-							<progress max={items.length || 1} value={studied} aria-label="Cards studied"
-							></progress>
-						</div>
-						<p class="last-studied muted">
-							Last studied <span
-								>{stats?.last ? new Date(stats.last).toLocaleString() : 'Never'}</span
+							<div
+								class="mastery-bar"
+								role="progressbar"
+								aria-label="Progress toward memorizing all cards"
+								aria-valuemin={0}
+								aria-valuemax={100}
+								aria-valuenow={progressPercent}
+								aria-valuetext={`${statusCounts.new} new, ${statusCounts.learning} learning, ${statusCounts.review} review, ${statusCounts.memorized} memorized out of ${items.length} cards`}
+								title="Each color includes cards at that memory level or higher."
 							>
-						</p>
+								{#each ['learning', 'review', 'memorized'] as status (status)}
+									<span
+										class="mastery-layer {status}"
+										style:width={`${progressLayers[status as keyof typeof progressLayers]}%`}
+									></span>
+								{/each}
+							</div>
+						</div>
 					</div>
 				</div>
 				<fieldset class="study-filters">
@@ -977,7 +1017,11 @@
 		white-space: pre-wrap;
 		overflow-wrap: anywhere;
 	}
-	.deck-heading > button {
+	.deck-heading-actions {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: 0.5rem;
 		flex-shrink: 0;
 	}
 	.deck-details-form {
@@ -1026,30 +1070,56 @@
 		color: var(--accent);
 	}
 	.coverage-row {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 2rem;
 		margin-top: 1.25rem;
-		font-size: 0.8rem;
 	}
 	.coverage-meter {
-		flex: 1;
-		max-width: 28rem;
+		width: 100%;
 	}
-	.coverage-label {
+	.mastery-bar {
+		position: relative;
+		height: 0.75rem;
+		overflow: hidden;
+		border-radius: 999px;
+		background: var(--line);
+	}
+	.mastery-layer {
+		position: absolute;
+		inset: 0 auto 0 0;
+		border-radius: inherit;
+	}
+	.mastery-layer.learning,
+	.mastery-legend .learning {
+		background: #dca34b;
+	}
+	.mastery-layer.review,
+	.mastery-legend .review {
+		background: #728cdb;
+	}
+	.mastery-layer.memorized,
+	.mastery-legend .memorized {
+		background: #399982;
+	}
+	.mastery-legend {
 		display: flex;
-		justify-content: space-between;
-		gap: 1rem;
-		margin-bottom: 0.25rem;
+		flex-wrap: wrap;
+		gap: 0.35rem 0.85rem;
+		margin-bottom: 0.5rem;
 		color: var(--muted);
+		font-size: 0.8rem;
 	}
-	.coverage-label strong {
-		color: var(--ink);
-		font-weight: 500;
-		margin-left: 0.4rem;
+	.mastery-legend > span {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+	}
+	.mastery-legend i {
+		width: 0.45rem;
+		height: 0.45rem;
+		border-radius: 50%;
+		background: var(--line);
 	}
 	.last-studied {
+		font-size: 0.75rem;
 		text-align: right;
 	}
 	.last-studied span {
@@ -1155,21 +1225,6 @@
 		}
 		.stat-grid > div {
 			padding: 0.75rem;
-		}
-		.coverage-row {
-			align-items: stretch;
-			flex-direction: column;
-			gap: 0.75rem;
-		}
-		.coverage-meter {
-			max-width: none;
-		}
-		.last-studied {
-			text-align: left;
-		}
-		.last-studied span {
-			display: inline;
-			margin-left: 0.4rem;
 		}
 		.study-setup {
 			flex: 1;
