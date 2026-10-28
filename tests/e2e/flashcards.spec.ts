@@ -19,8 +19,20 @@ test('create, edit, study and reload preserves card coverage', async ({ page }) 
 		'Mitochondrion — makes ATP'
 	);
 	await page.getByRole('button', { name: 'Study', exact: true }).click();
-	await page.getByRole('button', { name: 'Reveal answer' }).click();
+	await page.setViewportSize({ width: 390, height: 667 });
+	const stage = page.locator('.practice-stage');
+	const bounds = await stage.boundingBox();
+	expect(bounds).not.toBeNull();
+	expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(667);
+	await page.getByRole('button', { name: 'Reveal answer', exact: true }).click();
+	await page.keyboard.press('Space');
+	await expect(page.getByText('Cell powerhouse?', { exact: true })).toBeVisible();
+	await page.keyboard.press('Space');
 	await expect(page.getByText('Mitochondrion — makes ATP', { exact: true })).toBeVisible();
+	await page.keyboard.press('ArrowRight');
+	await expect(page.getByRole('heading', { name: 'Practice complete' })).toBeVisible();
+	await page.keyboard.press('ArrowLeft');
+	await expect(page.getByText('Cell powerhouse?', { exact: true })).toBeVisible();
 	await page.getByRole('button', { name: 'Next card' }).click();
 	await expect(page.getByText('1 cards · Studied 1/1 (100%)')).toBeVisible();
 	page.on('dialog', (d) => d.accept());

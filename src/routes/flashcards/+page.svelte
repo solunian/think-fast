@@ -70,6 +70,44 @@
 	let queue = $state<repo.Card[]>([]);
 	let practicing = $state(false);
 	let revealed = $state(false);
+	let previousCards = $state<repo.Card[]>([]);
+	function previous() {
+		const card = previousCards.at(-1);
+		if (!card || busy) return;
+		previousCards = previousCards.slice(0, -1);
+		queue = [card, ...queue];
+		revealed = false;
+	}
+	function practiceKey(event: KeyboardEvent) {
+		if (!practicing || busy || event.repeat || event.altKey || event.ctrlKey || event.metaKey)
+			return;
+		if (
+			event.target instanceof HTMLElement &&
+			event.target.closest('input, textarea, select, [contenteditable="true"]')
+		)
+			return;
+		if (event.code === 'Space' && queue[0]) {
+			event.preventDefault();
+			revealed = !revealed;
+		} else if (mode === 'random' && event.key === 'ArrowLeft') {
+			event.preventDefault();
+			previous();
+		} else if (mode === 'random' && event.key === 'ArrowRight' && queue[0]) {
+			event.preventDefault();
+			void run(next);
+		} else if (mode === 'scheduled' && ['ArrowLeft', 'ArrowRight'].includes(event.key)) {
+			const buttons = Array.from(
+				document.querySelectorAll<HTMLButtonElement>('.rating-controls button')
+			);
+			if (!buttons.length) return;
+			event.preventDefault();
+			const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
+			buttons[
+				(index + (event.key === 'ArrowRight' ? 1 : buttons.length - 1) + buttons.length) %
+					buttons.length
+			].focus();
+		}
+	}
 	let loading = $state(true);
 	async function run(action: () => Promise<void>) {
 		if (busy) return;
@@ -133,6 +171,7 @@
 			[queue[i], queue[j]] = [queue[j], queue[i]];
 		}
 		sessionSize = queue.length;
+		previousCards = [];
 		lastReview = undefined;
 		practicing = true;
 		revealed = false;
@@ -140,6 +179,7 @@
 	}
 	async function next() {
 		await repo.study(queue[0]);
+		previousCards = [...previousCards, queue[0]];
 		queue = queue.slice(1);
 		revealed = false;
 		studied = await repo.coverage(items);
@@ -254,31 +294,34 @@
 	}
 </script>
 
+<svelte:window onkeydown={practiceKey} />
+
 <svelte:head><title>Flashcards · Think Fast</title></svelte:head>
-<main class="flashcards mx-auto max-w-6xl space-y-6 p-4 sm:p-8">
-	<div class="page-heading">
-		<div>
-			<p class="eyebrow">YOUR PERSONAL STUDY SPACE</p>
-			<h1 class="text-3xl font-medium">
-				{practicing ? 'Practice' : selected ? 'Deck studio' : 'Flashcards'}
-			</h1>
-			<p class="muted">
-				{practicing
-					? 'One question at a time. Take a breath and focus.'
-					: selected
-						? 'Shape your knowledge, one card at a time.'
-						: 'Small cards. Lasting knowledge. Pick a deck and keep going.'}
-			</p>
+<main class:practicing class="flashcards mx-auto max-w-6xl space-y-6 p-4 sm:p-8">
+	{#if !practicing}<div class="page-heading">
+			<div>
+				<p class="eyebrow">YOUR PERSONAL STUDY SPACE</p>
+				<h1 class="text-3xl font-medium">
+					{practicing ? 'Practice' : selected ? 'Deck studio' : 'Flashcards'}
+				</h1>
+				<p class="muted">
+					{practicing
+						? 'One question at a time. Take a breath and focus.'
+						: selected
+							? 'Shape your knowledge, one card at a time.'
+							: 'Small cards. Lasting knowledge. Pick a deck and keep going.'}
+				</p>
+			</div>
+			{#if !selected}<button
+					class="btn-primary"
+					onclick={() => {
+						creating = !creating;
+						name = '';
+						description = '';
+					}}>+ Create deck</button
+				>{/if}
 		</div>
-		{#if !selected}<button
-				class="btn-primary"
-				onclick={() => {
-					creating = !creating;
-					name = '';
-					description = '';
-				}}>+ Create deck</button
-			>{/if}
-	</div>
+	{/if}
 	{#if error}<p role="alert" class="surface p-4 text-[var(--danger)]">
 			{error}
 			<button
@@ -291,17 +334,18 @@
 		</p>{/if}
 	{#if loading}<p role="status">Loading decks…</p>{/if}
 	{#if selected}
-		<button
-			class="btn-secondary"
-			onclick={() => {
-				selected = null;
-				name = '';
-				description = '';
-				practicing = false;
-				search = '';
-				void run(refreshLibrary);
-			}}>All decks</button
-		>
+		{#if !practicing}<button
+				class="btn-secondary"
+				onclick={() => {
+					selected = null;
+					name = '';
+					description = '';
+					practicing = false;
+					search = '';
+					void run(refreshLibrary);
+				}}>All decks</button
+			>
+		{/if}
 		{#if !practicing}
 			<section class="surface deck-overview space-y-4 p-6">
 				<h2 class="text-2xl font-medium">{selected.name}</h2>
@@ -368,10 +412,10 @@
 			</section>
 		{/if}
 		{#if practicing}
-			<section class="surface practice-stage space-y-5 p-6 sm:p-10">
+			<section class="surface practice-stage">
 				<div class="practice-top">
 					<span class="eyebrow">{selected.name}</span><span class="muted"
-						>{mode === 'scheduled' ? 'Spaced repetition' : 'Random practice'}</span
+						>{queue.length} remaining</span
 					>
 				</div>
 				<progress
@@ -385,42 +429,80 @@
 						: ''}
 				</p>
 				{#if queue[0]}
-					<p>{queue.length} remaining</p>
-					<p class="practice-question whitespace-pre-wrap text-2xl">{queue[0].front}</p>
-					{#if revealed}
-						<p class="whitespace-pre-wrap border-t border-[var(--line)] pt-5">{queue[0].back}</p>
-						{#if mode === 'scheduled'}
-							{#each [1, 2, 3, 4] as grade (grade)}
-								<button
-									class="btn-primary"
-									disabled={busy}
-									onclick={() => run(() => rating(grade as 1 | 2 | 3 | 4))}
-									>{['', 'Again', 'Hard', 'Good', 'Easy'][grade]} · {schedule
-										? new Date(schedule.choices[grade as 1 | 2 | 3 | 4].card.due).toLocaleString()
-										: ''}</button
+					<button
+						class="flashcard"
+						aria-label={revealed ? 'Show question' : 'Reveal answer'}
+						aria-pressed={revealed}
+						onclick={() => (revealed = !revealed)}
+					>
+						<span class="eyebrow">{revealed ? 'Answer' : 'Question'}</span>
+						<span class="card-content">{revealed ? queue[0].back : queue[0].front}</span>
+						<span class="muted text-sm">Click card or press Space to flip</span>
+					</button>
+				{:else}<div class="practice-complete">
+						<h2 class="text-xl font-medium">Practice complete</h2>
+					</div>{/if}
+				<footer class="practice-controls">
+					{#if mode === 'random'}
+						<div class="card-navigation">
+							<button
+								class="btn-secondary"
+								disabled={busy || !previousCards.length}
+								onclick={previous}>← Previous card</button
+							>
+							{#if queue[0]}<button class="btn-secondary" onclick={() => (revealed = !revealed)}
+									>Flip card · Space</button
 								>
-							{/each}
-						{:else}<button class="btn-primary" disabled={busy} onclick={() => run(next)}
-								>Next card</button
+								<button class="btn-primary" disabled={busy} onclick={() => run(next)}
+									>Next card →</button
+								>{/if}
+						</div>
+						<p class="muted text-sm">← / → Previous / next card · Space to flip</p>
+					{:else if queue[0]}
+						<div class="rating-controls">
+							{#if revealed}{#each [1, 2, 3, 4] as grade (grade)}
+									<button
+										class="btn-primary"
+										disabled={busy}
+										onclick={() => run(() => rating(grade as 1 | 2 | 3 | 4))}
+									>
+										{['', 'Again', 'Hard', 'Good', 'Easy'][grade]}
+										<span class="block text-xs"
+											>{schedule
+												? new Date(
+														schedule.choices[grade as 1 | 2 | 3 | 4].card.due
+													).toLocaleString()
+												: ''}</span
+										>
+									</button>
+								{/each}{:else}<button class="btn-primary" onclick={() => (revealed = true)}
+									>Reveal answer</button
+								>{/if}
+						</div>
+						<p class="muted text-sm">← / → Select rating · Enter to rate · Space to flip</p>
+					{/if}
+					<div class="practice-exit">
+						{#if !queue.length}<button
+								class="btn-secondary"
+								disabled={busy}
+								onclick={() => run(start)}>Another pass</button
 							>{/if}
-					{:else}<button class="btn-primary" onclick={() => (revealed = true)}>Reveal answer</button
-						>{/if}
-				{:else}<h2 class="text-xl font-medium">Practice complete</h2>
-					<button class="btn-secondary" onclick={() => run(start)}>Another pass</button>{/if}
-				{#if lastReview}<button
-						class="btn-secondary"
-						disabled={busy}
-						onclick={() =>
-							run(async () => {
-								if (lastReview) {
-									await (await import('../../lib/flashcards/scheduler')).undo(lastReview);
-									lastReview = undefined;
-									studied = await repo.coverage(items);
-									await prepareSchedule();
-								}
-							})}>Undo last rating</button
-					>{/if}
-				<button class="btn-quiet" onclick={() => (practicing = false)}>End practice</button>
+						{#if lastReview}<button
+								class="btn-secondary"
+								disabled={busy}
+								onclick={() =>
+									run(async () => {
+										if (lastReview) {
+											await (await import('../../lib/flashcards/scheduler')).undo(lastReview);
+											lastReview = undefined;
+											studied = await repo.coverage(items);
+											await prepareSchedule();
+										}
+									})}>Undo last rating</button
+							>{/if}
+						<button class="btn-quiet" onclick={() => (practicing = false)}>End practice</button>
+					</div>
+				</footer>
 			</section>
 		{:else}
 			<div class="page-heading">
@@ -798,17 +880,6 @@
 	.empty-state p {
 		margin: 0.75rem 0 1.5rem;
 	}
-	.practice-stage {
-		max-width: 800px;
-		margin: 2rem auto;
-	}
-	.practice-question {
-		min-height: 180px;
-		display: grid;
-		place-content: center;
-		text-align: center;
-		overflow-wrap: anywhere;
-	}
 	progress {
 		width: 100%;
 		height: 6px;
@@ -821,5 +892,97 @@
 	summary {
 		cursor: pointer;
 		color: var(--muted);
+	}
+
+	.practicing {
+		position: fixed;
+		inset: 0;
+		z-index: 30;
+		height: 100dvh;
+		max-width: none;
+		margin: 0;
+		padding: clamp(0.5rem, 2vh, 1.5rem);
+		background: var(--bg, var(--surface));
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+	.practicing > :global(*) {
+		margin-block: 0;
+	}
+	.practice-stage {
+		width: 100%;
+		max-width: 64rem;
+		margin: auto;
+		flex: 1;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		padding: clamp(1rem, 3vw, 2rem);
+	}
+	.practice-top,
+	.card-navigation,
+	.rating-controls,
+	.practice-exit {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+	.practice-top {
+		justify-content: space-between;
+	}
+	progress {
+		width: 100%;
+		height: 0.35rem;
+	}
+	.flashcard {
+		flex: 1;
+		min-height: 0;
+		width: 100%;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 1rem;
+		padding: 1rem;
+		border: 1px solid var(--line);
+		border-radius: 0.75rem;
+		cursor: pointer;
+		overflow: auto;
+	}
+	.flashcard:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: 2px;
+	}
+	.card-content {
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+		font-size: clamp(1.25rem, 3vw, 2rem);
+		text-align: center;
+		flex-shrink: 0;
+		max-width: 100%;
+	}
+	.practice-complete {
+		flex: 1;
+		display: grid;
+		place-items: center;
+	}
+	.practice-controls {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		text-align: center;
+	}
+	@media (max-height: 500px) {
+		.practice-stage {
+			gap: 0.25rem;
+			padding: 0.5rem;
+		}
+		.flashcard {
+			gap: 0.25rem;
+		}
 	}
 </style>
