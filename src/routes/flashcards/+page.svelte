@@ -35,6 +35,23 @@
 		void run(refreshLibrary);
 	});
 	let mode = $state('random');
+	const studyLabels = {
+		new: 'New',
+		learning: 'Learning',
+		review: 'Review',
+		memorized: 'Memorized'
+	};
+	let selectedStatuses = $state<repo.StudyStatus[]>(['new', 'learning', 'review', 'memorized']);
+	let randomStatuses = $state<Record<string, repo.StudyStatus>>({});
+	let scheduledStatuses = $state<Record<string, repo.StudyStatus>>({});
+	const cardStatuses = $derived(mode === 'random' ? randomStatuses : scheduledStatuses);
+	async function refreshStatuses() {
+		[randomStatuses, scheduledStatuses] = await Promise.all([
+			repo.studyStatuses(items, 'random'),
+			repo.studyStatuses(items, 'scheduled')
+		]);
+	}
+
 	let schedule =
 		$state<Awaited<ReturnType<typeof import('../../lib/flashcards/scheduler').predictions>>>();
 	let lastReview = $state<import('../../lib/flashcards/scheduler').Review>();
@@ -56,8 +73,19 @@
 	let library = $state<repo.Deck[]>([]);
 	let selected = $state<repo.Deck | null>(null);
 	let items = $state<repo.Card[]>([]);
+	const statusCounts = $derived({
+		new: items.filter((card) => (cardStatuses[card.id] ?? 'new') === 'new').length,
+		learning: items.filter((card) => cardStatuses[card.id] === 'learning').length,
+		review: items.filter((card) => cardStatuses[card.id] === 'review').length,
+		memorized: items.filter((card) => cardStatuses[card.id] === 'memorized').length
+	});
+	const matchingCards = $derived(
+		items.filter((card) => selectedStatuses.includes(cardStatuses[card.id] ?? 'new')).length
+	);
+
 	let name = $state('');
 	let description = $state('');
+	let editingDetails = $state(false);
 	let front = $state('');
 	let back = $state('');
 
@@ -118,7 +146,10 @@
 		} catch (e) {
 			error = e instanceof Error ? e.message : String(e);
 		} finally {
-			if (selected) stats = await repo.summary(items);
+			if (selected) {
+				stats = await repo.summary(items);
+				await refreshStatuses();
+			}
 			busy = false;
 		}
 	}
@@ -130,6 +161,8 @@
 	});
 	async function open(deck: repo.Deck) {
 		selected = deck;
+		editingDetails = false;
+		selectedStatuses = ['new', 'learning', 'review', 'memorized'];
 		creating = false;
 		search = '';
 		name = deck.name;
@@ -156,16 +189,10 @@
 		back = '';
 	}
 	async function start() {
-		queue = [...items];
-		if (mode === 'scheduled') {
-			const scheduler = await import('../../lib/flashcards/scheduler');
-			const states = await Promise.all(queue.map((c) => scheduler.predictions(c.id)));
-			queue = queue
-				.filter(
-					(_, i) => !states[i].state || new Date(states[i].state!.card.due).getTime() <= Date.now()
-				)
-				.slice(0, 100);
-		}
+		await refreshStatuses();
+		queue = items.filter((card) => selectedStatuses.includes(cardStatuses[card.id]));
+		if (!queue.length) throw new Error('Choose a label with cards to start studying.');
+
 		for (let i = queue.length - 1; i > 0; i--) {
 			const j = Math.floor(Math.random() * (i + 1));
 			[queue[i], queue[j]] = [queue[j], queue[i]];
@@ -177,8 +204,8 @@
 		revealed = false;
 		await prepareSchedule();
 	}
-	async function next() {
-		await repo.study(queue[0]);
+	async function next(status?: Exclude<repo.StudyStatus, 'new'>) {
+		await repo.study(queue[0], status);
 		previousCards = [...previousCards, queue[0]];
 		queue = queue.slice(1);
 		revealed = false;
@@ -290,6 +317,7 @@
 		if (!selected || !name.trim()) throw new Error('Enter a deck name.');
 		selected = { ...selected, name: name.trim(), description };
 		await repo.saveDeck(selected);
+		editingDetails = false;
 		await refreshLibrary();
 	}
 </script>
@@ -298,27 +326,20 @@
 
 <svelte:head><title>Flashcards · Think Fast</title></svelte:head>
 <main class:practicing class="flashcards mx-auto max-w-6xl space-y-6 p-4 sm:p-8">
-	{#if !practicing}<div class="page-heading">
+	{#if !practicing && !selected}
+		<div class="page-heading">
 			<div>
-				<h1 class="text-3xl font-medium">
-					{practicing ? 'Practice' : selected ? 'Deck studio' : 'Flashcards'}
-				</h1>
-				<p class="muted">
-					{practicing
-						? 'Review your cards.'
-						: selected
-							? 'Edit cards or start a review.'
-							: 'Choose a deck to review.'}
-				</p>
+				<h1 class="text-3xl font-medium">Flashcards</h1>
+				<p class="muted">Choose a deck to review.</p>
 			</div>
-			{#if !selected}<button
-					class="btn-primary"
-					onclick={() => {
-						creating = !creating;
-						name = '';
-						description = '';
-					}}>+ Create deck</button
-				>{/if}
+			<button
+				class="btn-primary"
+				onclick={() => {
+					creating = !creating;
+					name = '';
+					description = '';
+				}}>+ Create deck</button
+			>
 		</div>
 	{/if}
 	{#if error}<p role="alert" class="surface p-4 text-[var(--danger)]">
@@ -342,72 +363,179 @@
 					practicing = false;
 					search = '';
 					void run(refreshLibrary);
-				}}>All decks</button
+				}}>← All decks</button
 			>
 		{/if}
 		{#if !practicing}
-			<section class="surface deck-overview space-y-4 p-6">
-				<h2 class="text-2xl font-medium">{selected.name}</h2>
-				<details>
-					<summary>Rename / description</summary>
-					<label class="field"><span>Name</span><input class="input" bind:value={name} /></label>
-					<label class="field"
-						><span>Description</span><input class="input" bind:value={description} /></label
-					>
-					<button class="btn-secondary" disabled={busy} onclick={() => run(rename)}
-						>Save deck</button
-					>
-				</details>
-				<details>
-					<summary>Export deck</summary>
-					<p>
-						CSV contains plain text cards only. Spreadsheet-sensitive text uses reversible
-						apostrophe escaping. JSON preserves content IDs. Progress can optionally be included in
-						JSON.
-					</p>
+			<section class="surface deck-overview" aria-label="Deck overview">
+				<div class="deck-heading">
+					<div class="deck-title">
+						<h1>{selected.name}</h1>
+						{#if selected.description}<p class="muted">{selected.description}</p>{/if}
+					</div>
 					<button
 						class="btn-secondary"
+						aria-expanded={editingDetails}
 						onclick={() => {
-							if (selected)
-								download(
-									exportCsv(selected, items),
-									selected.name + '.csv',
-									'text/csv;charset=utf-8'
-								);
-						}}>Export CSV</button
+							name = selected!.name;
+							description = selected!.description;
+							editingDetails = !editingDetails;
+						}}>Edit details</button
 					>
-					<label
-						><input type="checkbox" bind:checked={includeProgress} /> Include default profile progress
-						and review history</label
+				</div>
+				{#if editingDetails}
+					<form
+						class="deck-details-form"
+						onsubmit={(e) => {
+							e.preventDefault();
+							void run(rename);
+						}}
 					>
-					<button class="btn-secondary" disabled={busy} onclick={() => run(downloadDeckJson)}
-						>Export JSON</button
-					>
-				</details>
-				<p>{selected.description}</p>
-				<p>
-					{items.length} cards · Studied {studied}/{items.length}{items.length
-						? ' (' + Math.round((studied / items.length) * 100) + '%)'
-						: ''}
-				</p>
-				{#if stats}<p>
-						New {stats.new} · Learning {stats.learning} · Review {stats.review} · Due {stats.due}
+						<label class="field"
+							><span>Deck name</span><input
+								class="input"
+								bind:value={name}
+								required
+								placeholder="Give your deck a name"
+							/></label
+						>
+						<label class="field"
+							><span>Description <span class="muted">(optional)</span></span><textarea
+								class="input"
+								bind:value={description}
+								rows="3"
+								placeholder="What will you learn with this deck?"></textarea></label
+						>
+						<div class="detail-actions">
+							<button class="btn-primary" disabled={busy || !name.trim()}>Save changes</button>
+							<button
+								type="button"
+								class="btn-quiet"
+								disabled={busy}
+								onclick={() => (editingDetails = false)}>Cancel</button
+							>
+						</div>
+					</form>
+				{/if}
+				<div class="deck-statistics">
+					<dl class="stat-grid" aria-label="Deck statistics">
+						<div>
+							<dt>Total cards</dt>
+							<dd>{items.length}</dd>
+						</div>
+						<div>
+							<dt>New</dt>
+							<dd>{statusCounts.new}</dd>
+						</div>
+						<div>
+							<dt>Learning</dt>
+							<dd>{statusCounts.learning}</dd>
+						</div>
+						<div>
+							<dt>Review</dt>
+							<dd>{statusCounts.review}</dd>
+						</div>
+						<div class="memorized-stat">
+							<dt>Memorized</dt>
+							<dd>{statusCounts.memorized}</dd>
+						</div>
+					</dl>
+					<div class="coverage-row">
+						<div class="coverage-meter">
+							<div class="coverage-label">
+								<span>Studied <strong>{studied} / {items.length}</strong></span><span
+									>{items.length ? Math.round((studied / items.length) * 100) : 0}%</span
+								>
+							</div>
+							<progress max={items.length || 1} value={studied} aria-label="Cards studied"
+							></progress>
+						</div>
+						<p class="last-studied muted">
+							Last studied <span
+								>{stats?.last ? new Date(stats.last).toLocaleString() : 'Never'}</span
+							>
+						</p>
+					</div>
+				</div>
+				<fieldset class="study-filters">
+					<legend>Cards to study</legend>
+					<div class="filter-options">
+						{#each Object.entries(studyLabels) as [status, label]}
+							<label
+								class="status-filter"
+								class:active={selectedStatuses.includes(status as repo.StudyStatus)}
+							>
+								<input type="checkbox" value={status} bind:group={selectedStatuses} />
+								<span>{label}</span><span class="filter-count"
+									>{items.filter((card) => (cardStatuses[card.id] ?? 'new') === status)
+										.length}</span
+								>
+							</label>
+						{/each}
+					</div>
+					<p class="muted">
+						{matchingCards}
+						{matchingCards === 1 ? 'card matches' : 'cards match'} · {mode === 'random'
+							? 'Label cards as you practice to organize your next session.'
+							: 'All matching cards are included. Memorized cards have a review interval of at least 21 days.'}
 					</p>
-					<p>Last studied: {stats.last ? new Date(stats.last).toLocaleString() : 'Never'}</p>{/if}
-				<label class="field"
-					><span>Study mode</span><select class="input" bind:value={mode}
-						><option value="random">Random practice</option><option value="scheduled"
-							>FSRS review</option
-						></select
-					></label
-				>
-				<p class="muted">
-					Random practice leaves schedules unchanged. FSRS selects up to 100 due or new cards per
-					pass.
-				</p>
-				<button class="btn-primary" disabled={busy || !items.length} onclick={() => run(start)}
-					>Study</button
-				>
+				</fieldset>
+				<div class="study-toolbar">
+					<div class="study-setup">
+						<label class="field"
+							><span>Study mode</span><select
+								class="input"
+								bind:value={mode}
+								aria-describedby="study-mode-help"
+								><option value="random">Random practice</option><option value="scheduled"
+									>FSRS review</option
+								></select
+							></label
+						>
+						<p class="muted" id="study-mode-help">
+							{mode === 'random'
+								? 'Shuffle the cards matching your labels.'
+								: 'Review all matching cards. Your ratings update their schedules.'}
+						</p>
+					</div>
+					<div class="study-start">
+						{#if mode === 'scheduled'}<p class="muted text-sm">{stats?.due ?? 0} due now</p>{/if}
+						<button class="btn-primary" disabled={busy || !matchingCards} onclick={() => run(start)}
+							>Study</button
+						>
+					</div>
+				</div>
+
+				<details class="deck-export">
+					<summary>Export deck</summary>
+					<div class="export-options">
+						<div>
+							<p class="font-medium">CSV</p>
+							<p class="muted text-sm">Plain text cards for spreadsheets and other apps.</p>
+							<button
+								class="btn-secondary"
+								onclick={() => {
+									if (selected)
+										download(
+											exportCsv(selected, items),
+											selected.name + '.csv',
+											'text/csv;charset=utf-8'
+										);
+								}}>Export CSV</button
+							>
+						</div>
+						<div>
+							<p class="font-medium">JSON</p>
+							<p class="muted text-sm">Keep card IDs and optionally include your progress.</p>
+							<label class="progress-option"
+								><input type="checkbox" bind:checked={includeProgress} /> Include progress and review
+								history</label
+							><button class="btn-secondary" disabled={busy} onclick={() => run(downloadDeckJson)}
+								>Export JSON</button
+							>
+						</div>
+					</div>
+				</details>
 			</section>
 		{/if}
 		{#if practicing}
@@ -443,6 +571,21 @@
 					</div>{/if}
 				<footer class="practice-controls">
 					{#if mode === 'random'}
+						{#if queue[0] && revealed}
+							<div class="random-labels" role="group" aria-label="Label this card">
+								<p class="muted text-sm">Choose a label to save and continue</p>
+								<div class="random-label-buttons">
+									{#each ['learning', 'review', 'memorized'] as status}
+										<button
+											class="btn-secondary"
+											disabled={busy}
+											onclick={() => run(() => next(status as Exclude<repo.StudyStatus, 'new'>))}
+											>{studyLabels[status as repo.StudyStatus]}</button
+										>
+									{/each}
+								</div>
+							</div>
+						{/if}
 						<div class="card-navigation">
 							<button
 								class="btn-secondary"
@@ -458,23 +601,27 @@
 						</div>
 						<p class="muted text-sm">← / → Previous / next card · Space to flip</p>
 					{:else if queue[0]}
-						<div class="rating-controls">
-							{#if revealed}{#each [1, 2, 3, 4] as grade (grade)}
+						<div class="rating-controls" class:rating-grid={revealed}>
+							{#if revealed}
+								{#each [1, 2, 3, 4] as grade (grade)}
 									<button
-										class="btn-primary"
+										class="rating-button"
 										disabled={busy}
 										onclick={() => run(() => rating(grade as 1 | 2 | 3 | 4))}
 									>
-										{['', 'Again', 'Hard', 'Good', 'Easy'][grade]}
-										<span class="block text-xs"
-											>{schedule
-												? new Date(
-														schedule.choices[grade as 1 | 2 | 3 | 4].card.due
-													).toLocaleString()
-												: ''}</span
+										<strong>{['', 'Again', 'Hard', 'Good', 'Easy'][grade]}</strong>
+										<span
+											>{[
+												'',
+												'I couldn’t recall it.',
+												'I remembered with effort.',
+												'I remembered correctly.',
+												'I knew it right away.'
+											][grade]}</span
 										>
 									</button>
-								{/each}{:else}<button class="btn-primary" onclick={() => (revealed = true)}
+								{/each}
+							{:else}<button class="btn-primary" onclick={() => (revealed = true)}
 									>Reveal answer</button
 								>{/if}
 						</div>
@@ -769,6 +916,243 @@
 </main>
 
 <style>
+	.deck-overview {
+		padding: clamp(1.25rem, 3vw, 2rem);
+	}
+	.deck-heading {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		gap: 1rem;
+	}
+	.deck-title {
+		min-width: 0;
+	}
+	.deck-title h1 {
+		font-size: clamp(1.6rem, 3vw, 2rem);
+		font-weight: 500;
+		letter-spacing: -0.04em;
+		overflow-wrap: anywhere;
+	}
+	.deck-title p {
+		margin-top: 0.4rem;
+		max-width: 42rem;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+	}
+	.deck-heading > button {
+		flex-shrink: 0;
+	}
+	.deck-details-form {
+		display: grid;
+		gap: 1rem;
+		margin-top: 1.5rem;
+		padding: 1.25rem;
+		border: 1px solid var(--line);
+		border-radius: 0.75rem;
+		background: var(--surface-muted);
+	}
+	.deck-details-form textarea {
+		resize: vertical;
+	}
+	.detail-actions {
+		display: flex;
+		gap: 0.5rem;
+	}
+	.deck-statistics {
+		margin-block: 1.75rem;
+	}
+	.stat-grid {
+		display: grid;
+		grid-template-columns: repeat(5, 1fr);
+		gap: 0.75rem;
+	}
+	.stat-grid > div {
+		display: flex;
+		flex-direction: column-reverse;
+		gap: 0.15rem;
+		padding: 1rem 1.25rem;
+		border-radius: 0.75rem;
+		background: var(--surface-muted);
+	}
+	.stat-grid dt {
+		color: var(--muted);
+		font-size: 0.8rem;
+	}
+	.stat-grid dd {
+		font-size: 1.75rem;
+		font-weight: 500;
+		letter-spacing: -0.04em;
+	}
+	.stat-grid .memorized-stat {
+		background: var(--accent-soft);
+		color: var(--accent);
+	}
+	.coverage-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 2rem;
+		margin-top: 1.25rem;
+		font-size: 0.8rem;
+	}
+	.coverage-meter {
+		flex: 1;
+		max-width: 28rem;
+	}
+	.coverage-label {
+		display: flex;
+		justify-content: space-between;
+		gap: 1rem;
+		margin-bottom: 0.25rem;
+		color: var(--muted);
+	}
+	.coverage-label strong {
+		color: var(--ink);
+		font-weight: 500;
+		margin-left: 0.4rem;
+	}
+	.last-studied {
+		text-align: right;
+	}
+	.last-studied span {
+		display: block;
+		color: var(--ink);
+	}
+	.study-toolbar {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-end;
+		gap: 1.5rem;
+		padding-block: 1.25rem;
+		border-top: 1px solid var(--line);
+	}
+	.study-setup {
+		display: flex;
+		align-items: flex-end;
+		gap: 1rem;
+	}
+	.study-setup select {
+		min-width: 12rem;
+	}
+	.study-setup p {
+		font-size: 1rem;
+		line-height: 1.5;
+		padding-block: 0.65rem;
+		max-width: 24rem;
+	}
+	.study-start {
+		min-width: 7rem;
+	}
+	.study-filters {
+		border: 0;
+		padding: 0 0 1.25rem;
+		min-width: 0;
+	}
+	.study-filters legend {
+		font-size: 0.85rem;
+		font-weight: 500;
+		margin-bottom: 0.65rem;
+	}
+	.filter-options {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+	.status-filter {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		border: 1px solid var(--line);
+		border-radius: 0.65rem;
+		padding: 0.5rem 0.75rem;
+		cursor: pointer;
+	}
+	.status-filter.active {
+		border-color: var(--accent);
+		background: var(--accent-soft);
+	}
+	.status-filter input {
+		accent-color: var(--accent);
+		width: 1rem;
+		height: 1rem;
+	}
+	.filter-count {
+		color: var(--muted);
+		font-size: 0.85rem;
+	}
+	.study-filters > p {
+		font-size: 0.85rem;
+		margin-top: 0.75rem;
+	}
+	.study-start {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.4rem;
+		text-align: center;
+	}
+	.export-options {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 2rem;
+		padding-top: 1rem;
+	}
+	.export-options button {
+		margin-top: 0.75rem;
+	}
+	.progress-option {
+		display: flex;
+		gap: 0.5rem;
+		align-items: center;
+		font-size: 0.8rem;
+		margin-top: 0.5rem;
+	}
+	@media (max-width: 640px) {
+		.deck-heading {
+			flex-wrap: wrap;
+		}
+		.stat-grid {
+			grid-template-columns: repeat(3, 1fr);
+			gap: 0.5rem;
+		}
+		.stat-grid > div {
+			padding: 0.75rem;
+		}
+		.coverage-row {
+			align-items: stretch;
+			flex-direction: column;
+			gap: 0.75rem;
+		}
+		.coverage-meter {
+			max-width: none;
+		}
+		.last-studied {
+			text-align: left;
+		}
+		.last-studied span {
+			display: inline;
+			margin-left: 0.4rem;
+		}
+		.study-setup {
+			flex: 1;
+			flex-direction: column;
+			align-items: stretch;
+			gap: 0.5rem;
+		}
+		.study-toolbar {
+			align-items: flex-start;
+		}
+		.study-start {
+			margin-top: 1.7rem;
+			min-width: auto;
+		}
+		.export-options {
+			grid-template-columns: 1fr;
+			gap: 1.5rem;
+		}
+	}
+
 	.page-heading,
 	.tile-actions,
 	.practice-top {
@@ -929,6 +1313,50 @@
 		align-items: center;
 		flex-wrap: wrap;
 		gap: 0.5rem;
+	}
+	.rating-controls.rating-grid {
+		display: grid;
+		grid-template-columns: repeat(4, 1fr);
+		gap: 0.75rem;
+	}
+	.rating-button {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.35rem;
+		padding: 0.85rem;
+		background: var(--surface);
+		border: 1px solid var(--line);
+		border-radius: 0.75rem;
+	}
+	.rating-button:hover {
+		background: var(--surface-muted);
+		border-color: var(--accent);
+	}
+	.rating-button strong {
+		font-size: 1rem;
+		font-weight: 600;
+	}
+	.rating-button span {
+		color: var(--muted);
+		font-size: 0.85rem;
+		line-height: 1.4;
+	}
+	.random-label-buttons {
+		display: flex;
+		justify-content: center;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		margin-top: 0.4rem;
+	}
+	@media (max-width: 640px) {
+		.rating-controls.rating-grid {
+			grid-template-columns: repeat(2, 1fr);
+			gap: 0.5rem;
+		}
+		.rating-button {
+			padding: 0.6rem;
+		}
 	}
 	.practice-top {
 		justify-content: space-between;

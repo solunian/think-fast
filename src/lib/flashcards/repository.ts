@@ -29,10 +29,16 @@ export async function coverage(items: Card[]) {
 		Boolean
 	).length;
 }
-export async function study(card: Card) {
+export async function study(card: Card, status?: Exclude<StudyStatus, 'new'>) {
+	const previous = await (await getDatabase()).get('flashProgress', 'default:' + card.id);
 	await (
 		await getDatabase()
-	).put('flashProgress', { id: 'default:' + card.id, studiedAt: new Date().toISOString() });
+	).put('flashProgress', {
+		...previous,
+		id: 'default:' + card.id,
+		studiedAt: new Date().toISOString(),
+		status: status ?? previous?.status ?? 'learning'
+	});
 }
 
 export async function importCards(deck: Deck, incoming: Card[]) {
@@ -122,4 +128,33 @@ export async function restoreDocument(
 			});
 	}
 	await tx.done;
+}
+
+export type StudyStatus = 'new' | 'learning' | 'review' | 'memorized';
+
+export function studyStatus(card?: { state: number; scheduled_days: number }): StudyStatus {
+	if (!card || card.state === 0) return 'new';
+	if (card.state === 1 || card.state === 3) return 'learning';
+	return card.scheduled_days >= 21 ? 'memorized' : 'review';
+}
+
+export async function studyStatuses(
+	items: Card[],
+	mode = 'scheduled'
+): Promise<Record<string, StudyStatus>> {
+	const db = await getDatabase();
+	return Object.fromEntries(
+		await Promise.all(
+			items.map(async (item) => {
+				const learning = await db.get('flashLearning', 'default:' + item.id);
+				const progress = await db.get('flashProgress', 'default:' + item.id);
+				return [
+					item.id,
+					mode === 'random'
+						? (progress?.status ?? (progress ? 'learning' : 'new'))
+						: studyStatus(learning?.card)
+				];
+			})
+		)
+	);
 }

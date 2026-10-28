@@ -27,7 +27,10 @@ interface ThinkFastDatabase extends DBSchema {
 		value: import('../flashcards/repository').Card;
 		indexes: { 'by-deck': string };
 	};
-	flashProgress: { key: string; value: { id: string; studiedAt: string } };
+	flashProgress: {
+		key: string;
+		value: { id: string; studiedAt: string; status?: 'learning' | 'review' | 'memorized' };
+	};
 	settings: { key: string; value: Settings };
 	sessions: {
 		key: string;

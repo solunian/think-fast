@@ -15,7 +15,11 @@ export interface Review {
 	previous: Learning | undefined;
 	next: Learning;
 	undone: boolean;
-	previousProgress?: { id: string; studiedAt: string };
+	previousProgress?: {
+		id: string;
+		studiedAt: string;
+		status?: 'learning' | 'review' | 'memorized';
+	};
 }
 const scheduler = fsrs({ enable_fuzz: false });
 export async function predictions(cardId: string, now = new Date()) {
@@ -58,7 +62,9 @@ export async function rate(
 	event.previousProgress = await tx.objectStore('flashProgress').get(next.id);
 	await tx.objectStore('flashLearning').put(next);
 	await tx.objectStore('flashReviews').add(event);
-	await tx.objectStore('flashProgress').put({ id: next.id, studiedAt: event.at });
+	await tx
+		.objectStore('flashProgress')
+		.put({ ...event.previousProgress, id: next.id, studiedAt: event.at });
 	await tx.done;
 	return event;
 }

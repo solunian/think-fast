@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseCsv, exportCsv, documentSchema } from './transfer';
+import { parseCsv, exportCsv, exportJson, documentSchema } from './transfer';
 describe('deck transfer', () => {
 	it('preserves multiline Unicode and formula-like text', () => {
 		const deck = { id: 'd', name: 'test', description: '' };
@@ -18,6 +18,18 @@ describe('deck transfer', () => {
 		expect(result.cards).toHaveLength(1);
 		expect(result.errors).toHaveLength(1);
 	});
+	it('preserves random practice labels in JSON backups', () => {
+		const deck = { id: 'd', name: 'Labels', description: '' };
+		const cards = [{ id: 'c', deckId: 'd', front: 'Question', back: 'Answer' }];
+		const progress = [
+			{ id: 'default:c', studiedAt: '2026-10-28T00:00:00.000Z', status: 'memorized' as const }
+		];
+		const document = documentSchema.parse(
+			JSON.parse(exportJson(deck, cards, { progress, learning: [], reviews: [] }))
+		);
+		expect(document.progress).toEqual(progress);
+	});
+
 	it('rejects broken references', () => {
 		expect(() =>
 			documentSchema.parse({

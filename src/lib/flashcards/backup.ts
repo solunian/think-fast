@@ -24,7 +24,13 @@ export const flashBackupSchema = z
 		cards: z.array(
 			z.object({ id: z.string(), deckId: z.string(), front: z.string(), back: z.string() })
 		),
-		progress: z.array(z.object({ id: z.string(), studiedAt: date })),
+		progress: z.array(
+			z.object({
+				id: z.string(),
+				studiedAt: date,
+				status: z.enum(['learning', 'review', 'memorized']).optional()
+			})
+		),
 		learning: z.array(learning),
 		reviews: z.array(
 			z.object({
@@ -37,7 +43,13 @@ export const flashBackupSchema = z
 				previous: learning.optional(),
 				next: learning,
 				undone: z.boolean(),
-				previousProgress: z.object({ id: z.string(), studiedAt: date }).optional()
+				previousProgress: z
+					.object({
+						id: z.string(),
+						studiedAt: date,
+						status: z.enum(['learning', 'review', 'memorized']).optional()
+					})
+					.optional()
 			})
 		)
 	})
