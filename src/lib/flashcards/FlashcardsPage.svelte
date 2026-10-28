@@ -99,6 +99,14 @@
 	let back = $state('');
 
 	let search = $state('');
+	let gridStatus = $state<repo.StudyStatus | 'all'>('all');
+	const filteredCards = $derived(
+		items.filter(
+			(card) =>
+				(gridStatus === 'all' || (cardStatuses[card.id] ?? 'new') === gridStatus) &&
+				(card.front + ' ' + card.back).toLowerCase().includes(search.toLowerCase())
+		)
+	);
 	let studied = $state(0);
 	let stats = $state<Awaited<ReturnType<typeof repo.summary>>>();
 	let cancelImport: (() => void) | undefined;
@@ -377,6 +385,7 @@
 				<div class="deck-heading">
 					<div class="deck-title">
 						<h1>{selected.name}</h1>
+						<p class="muted">{items.length} {items.length === 1 ? 'card' : 'cards'} total</p>
 						{#if selected.description}<p class="muted">{selected.description}</p>{/if}
 					</div>
 					<button
@@ -425,10 +434,6 @@
 				{/if}
 				<div class="deck-statistics">
 					<dl class="stat-grid" aria-label="Deck statistics">
-						<div>
-							<dt>Total cards</dt>
-							<dd>{items.length}</dd>
-						</div>
 						<div>
 							<dt>New</dt>
 							<dd>{statusCounts.new}</dd>
@@ -677,6 +682,18 @@
 					/></label
 				>
 			</div>
+			<label class="field"
+				><span>Filter cards by learning section</span><select class="input" bind:value={gridStatus}>
+					<option value="all">All sections</option>
+					{#each allStatuses as status (status)}
+						<option value={status}>{studyLabels[status]}</option>
+					{/each}
+				</select></label
+			>
+			<p class="muted" role="status">
+				{filteredCards.length}
+				{filteredCards.length === 1 ? 'card matches' : 'cards match'}
+			</p>
 			<div class="card-grid">
 				<form
 					class="surface card-tile new-card space-y-3"
@@ -702,9 +719,7 @@
 					>
 					<button class="btn-primary" disabled={busy}>Save and add another</button>
 				</form>
-				{#each items
-					.filter((c) => (c.front + ' ' + c.back).toLowerCase().includes(search.toLowerCase()))
-					.slice(0, 100) as card (card.id)}
+				{#each filteredCards.slice(0, 100) as card (card.id)}
 					<form
 						class="surface card-tile space-y-3"
 						onsubmit={(e) => {
@@ -715,7 +730,10 @@
 							});
 						}}
 					>
-						<p class="eyebrow">QUESTION & ANSWER</p>
+						<div class="tile-actions">
+							<p class="eyebrow">QUESTION & ANSWER</p>
+							<span class="badge">{studyLabels[cardStatuses[card.id] ?? 'new']}</span>
+						</div>
 						<label class="field"
 							><span>Front</span><textarea class="input" bind:value={card.front} required
 							></textarea></label
@@ -740,10 +758,14 @@
 							>
 						</div>
 					</form>
+				{:else}
+					<p class="surface empty-state">
+						No cards match these filters. Try another section or search.
+					</p>
 				{/each}
 			</div>
-			{#if items.length > 100}<p class="muted">
-					Showing up to 100 matches. Search to narrow results.
+			{#if filteredCards.length > 100}<p class="muted">
+					Showing the first 100 of {filteredCards.length} matches. Filter or search to narrow results.
 				</p>{/if}
 		{/if}
 	{:else if !deckId}
@@ -979,7 +1001,7 @@
 	}
 	.stat-grid {
 		display: grid;
-		grid-template-columns: repeat(5, 1fr);
+		grid-template-columns: repeat(4, 1fr);
 		gap: 0.75rem;
 	}
 	.stat-grid > div {
@@ -1128,7 +1150,7 @@
 			flex-wrap: wrap;
 		}
 		.stat-grid {
-			grid-template-columns: repeat(3, 1fr);
+			grid-template-columns: repeat(2, 1fr);
 			gap: 0.5rem;
 		}
 		.stat-grid > div {
